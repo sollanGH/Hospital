@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="zwf.dao.Storage_listDao">
+
+	
+	
+	<!--添加  -->
+	<insert id="addStroage_list" parameterType="Storage_list">
+	insert into storage_list(storage_id,medicines_id,storage_number,production_date,expiring_date,storage_price,storage_supply)
+	values(#{storage_id},#{medicines_id},#{storage_number},#{production_date},#{expiring_date},#{storage_price},#{storage_supply})
+	</insert>
+	
+	<!--更新  -->
+	<update id="updateStroage_list" parameterType="Storage_list">
+	update storage_list
+	<set>
+	 <if test="storage_number!=null and storage_number!='' ">
+	 	storage_number=#{storage_number},
+	 </if>
+	<!--  这个错的意思是：java.sql.Timestamp和java.lang.String无效的比较
+       brith_day !=  ''
+错误的原因是：拿传入的时间类型参数与空字符串进行比较就会报这个异常 -->
+	  <if test="production_date!=null ">
+	 	production_date=#{production_date},
+	 </if> 
+	 <if test="expiring_date!=null  ">
+	 	expiring_date=#{expiring_date},
+	 </if>
+	 <if test="storage_price!=null and storage_price!='' ">
+	 	storage_price=#{storage_price},
+	 </if>
+	 <if test="storage_supply!=null and storage_supply!='' ">
+	 	storage_supply=#{storage_supply},
+	 </if> 
+	</set>
+	where storage_list_id=#{storage_list_id}
+	</update> 
+	
+	<!--查询  -->
+	
+	<delete id="delStroage_list" parameterType="String">
+		delete from storage_list where storage_list_id in (${select_id})
+	</delete>
+	
+	
+	 <resultMap type="Storage_list" id="selectStorage_listMap">
+   <id column="storage_list_id" property="storage_list_id"/>
+  <result column="storage_id" property="storage_id"/>
+  <result column="storage_number" property="storage_number"/>
+  <result column="storage_date" property="storage_date"/>
+  <result column="production_date" property="production_date"/>
+  <result column="expiring_date" property="expiring_date"/>
+  <result column="storage_price" property="storage_price"/>
+  <result column="storage_supply" property="storage_supply"/>
+  <association property="medicines" javaType="zwf.po.Medicines"  >
+    <id column="medicines_id" property="medicines_id"/>
+    	<result column="medicines_name" property="medicines_name"/>
+    	<result column="medicines_form" property="medicines_form"/>
+    	<result column="medicines_specification" property="medicines_specification"/>
+    	<result column="medicines_number" property="medicines_number"/>
+    	<result column="medicines_unit" property="medicines_unit"/>
+    	<result column="medicines_price" property="medicines_price"/>
+    	<result column="condition" property="condition"/>
+    </association>
+   </resultMap>
+	<!--普通查询  -->
+	<select id="selectStorage_list" resultMap="selectStorage_listMap" parameterType="Map">
+		SELECT sl.*,m.*
+		FROM storage_list sl
+		LEFT JOIN medicines m ON m.medicines_id = sl.medicines_id 
+		WHERE 1=1
+		AND sl.storage_id = #{storage_id}
+		<if test="null != beginNumber and null != limit">
+  		LIMIT #{beginNumber},#{limit}
+  		</if>
+	</select>
+
+	<!--查询总数  -->
+	<select id="getCountStorage_list" resultType="int">
+  		SELECT COUNT(1) 
+  		FROM storage_list sl
+		WHERE 1=1 
+		AND sl.storage_id = #{storage_id}
+   </select>
+   
+
+   
+</mapper>

@@ -1,0 +1,429 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="zwf.dao.InspectionDao">
+	
+	
+   
+   <resultMap type="Inspection" id="select_InspectionMap">
+   <id column="inspection_id" property="inspection_id"/>
+  <result column="medical_orders_list_action_id" property="medical_orders_list_action_id"/>
+  <result column="inspection_item_id" property="inspection_item_id"/>
+  <result column="inspector" property="inspector"/>
+  <result column="inspection_time" property="inspection_time"/>
+  <result column="recipients" property="recipients"/>
+  <result column="acceptance_time" property="acceptance_time"/>
+  <result column="inspection_result" property="inspection_result"/>
+  <association property="medical_orders_list_action" javaType="zwf.po.Medical_Orders_List_Action"  >
+    <id column="medical_orders_list_action_id" property="medical_orders_list_action_id"/>   	
+    </association>
+    <association property="medical_Orders_Action" javaType="zwf.po.Medical_Orders_Action"  >
+    <id column="medical_orders_action_id" property="medical_orders_action_id"/>   	
+    </association>
+    <association property="patient" javaType="zwf.po.Patient"  >
+    <id column="patient_id" property="patient_id"/>
+    	<result column="patient_name" property="patient_name"/>
+    	<result column="patient_meal" property="patient_meal"/>
+    	<result column="age" property="age"/>
+    </association>
+    <association property="patient_message" javaType="zwf.po.Patient_message"  >
+    <id column="patient_message_id" property="patient_message_id"/>
+    	<result column="ruyuan_time" property="ruyuan_time"/>
+    	<result column="diagnosis_a" property="diagnosis_a"/>
+    </association>
+    <association property="deparment" javaType="zwf.po.Deparment"  >
+    <id column="deparment_id" property="deparment_id"/>
+    	<result column="deparment_name" property="deparment_name"/>
+    </association>
+    <association property="user" javaType="zwf.po.User"  >
+    <id column="user_id" property="user_id"/>
+    	<result column="doctor_name" property="user_name"/>
+    </association>
+    <association property="user1" javaType="zwf.po.User"  >
+    <id column="u1_id" property="user_id"/>
+    	<result column="nurse_name" property="user_name"/>
+    </association>
+    <association property="inspection_item" javaType="zwf.po.Inspection_item"  >
+    <id column="Inspection_item_id" property="Inspection_item_id"/>
+    	<result column="Inspection_item_name" property="Inspection_item_name"/>
+    	<result column="Inspection_item_unit" property="Inspection_item_unit"/>
+    	<result column="Inspection_item_pirce" property="Inspection_item_pirce"/>
+    </association>
+   </resultMap>
+   <select id="select_Inspection" resultMap="select_InspectionMap" parameterType="Map">
+   		SELECT p.*,i.*,i.inspection_id,p.patient_name,p.patient_meal,p.age,ii.Inspection_item_name,u1.user_name AS nurse_name,i.inspection_time,d.deparment_name,u2.user_name AS doctor_name,i.acceptance_time
+		FROM inspection i
+		LEFT JOIN medical_orders_list_action  mola ON mola.medical_orders_list_action_id = i.medical_orders_list_action_id
+		LEFT JOIN medical_orders_action moa ON moa.medical_orders_action_id = mola.medical_orders_action_id
+		LEFT JOIN inspection_item ii ON ii.Inspection_item_id = i.inspection_item_id
+		LEFT JOIN patient p ON p.patient_id = moa.patient_id
+		LEFT JOIN patient_message pm ON pm.patient_id = p.patient_id
+		LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+		LEFT JOIN `user` u1 ON u1.user_work_id = i.inspector
+		LEFT JOIN `user` u2 ON u2.user_work_id = i.recipients
+		WHERE 1=1
+		<if test="inspection_item_id!=null and inspection_item_id!=''">AND i.inspection_item_id = #{inspection_item_id}</if>
+		<if test="select_deparment_id!=null and select_deparment_id!=''">AND pm.deparment_id = #{select_deparment_id}</if>
+		<if test="patient_name!=null and patient_name!=''">AND p.patient_name like CONCAT('%','${patient_name}','%')</if>
+		<if test="start_ruyuan_time!=null and end_ruyuan_time!=null ">AND i.inspection_time BETWEEN '${start_ruyuan_time}' AND '${end_ruyuan_time}'</if>
+		ORDER BY i.inspection_time DESC
+		<if test="null != beginNumber and null != limit">
+  		LIMIT #{beginNumber},#{limit}
+  		</if>
+	</select>
+	
+	<select id="getCount_Inspection" resultType="int">
+		
+		SELECT COUNT(1) 
+		FROM inspection i
+		LEFT JOIN medical_orders_list_action  mola ON mola.medical_orders_list_action_id = i.medical_orders_list_action_id
+		LEFT JOIN medical_orders_action moa ON moa.medical_orders_action_id = mola.medical_orders_action_id
+		LEFT JOIN inspection_item ii ON ii.Inspection_item_id = i.inspection_item_id
+		LEFT JOIN patient p ON p.patient_id = moa.patient_id
+		LEFT JOIN patient_message pm ON pm.patient_id = p.patient_id
+		LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+		LEFT JOIN `user` u1 ON u1.user_work_id = i.inspector
+		LEFT JOIN `user` u2 ON u2.user_work_id = i.recipients
+		WHERE 1=1
+		<if test="inspection_item_id!=null and inspection_item_id!=''">AND i.inspection_item_id = #{inspection_item_id}</if>
+		<if test="select_deparment_id!=null and select_deparment_id!=''">AND pm.deparment_id = #{select_deparment_id}</if>
+		<if test="patient_name!=null and patient_name!=''">AND p.patient_name like CONCAT('%','${patient_name}','%')</if>
+		<if test="start_ruyuan_time!=null and end_ruyuan_time!=null ">AND i.inspection_time BETWEEN '${start_ruyuan_time}' AND '${end_ruyuan_time}'</if>
+   </select> 
+   
+   <!--添加  -->
+	<insert id="add_Inspection" parameterType="Inspection">
+	INSERT INTO inspection (inspection.inspection_id,inspection.medical_orders_list_action_id,inspection.inspector,inspection.inspection_time,inspection.inspection_item_id)
+	SELECT #{inspection_id},mola.medical_orders_list_action_id,mola.nurse_id,#{inspection_time},mola.Inspection_item_id
+	FROM medical_orders_list_action mola
+	WHERE NOT EXISTS(
+	SELECT * FROM inspection 
+	WHERE inspection.medical_orders_list_action_id = mola.medical_orders_list_action_id)
+	AND mola.types = 3 AND mola.medical_orders_list_action_id in (${select_id})
+	</insert>
+	
+	<update id="check_Inspection" parameterType="Inspection">
+	update inspection
+	<set>
+		recipients = #{recipients},
+		acceptance_time = #{acceptance_time},
+			
+	</set>
+	where  recipients is null and inspection_id = #{select_id}
+	</update>
+	
+	<resultMap type="Inspection" id="select_action_InspectionMap">
+   <id column="inspection_id" property="inspection_id"/>
+  <result column="medical_orders_list_action_id" property="medical_orders_list_action_id"/>
+  <result column="inspection_item_id" property="inspection_item_id"/>
+  <result column="inspector" property="inspector"/>
+  <result column="inspection_time" property="inspection_time"/>
+  <result column="recipients" property="recipients"/>
+  <result column="acceptance_time" property="acceptance_time"/>
+  <result column="inspection_result" property="inspection_result"/>
+  <association property="medical_orders_list_action" javaType="zwf.po.Medical_Orders_List_Action"  >
+    <id column="medical_orders_list_action_id" property="medical_orders_list_action_id"/>   	
+    </association>
+    <association property="medical_Orders_Action" javaType="zwf.po.Medical_Orders_Action"  >
+    <id column="medical_orders_action_id" property="medical_orders_action_id"/>   	
+    </association>
+    <association property="patient" javaType="zwf.po.Patient"  >
+    <id column="patient_id" property="patient_id"/>
+    	<result column="patient_name" property="patient_name"/>
+    	<result column="patient_meal" property="patient_meal"/>
+    	<result column="age" property="age"/>
+    </association>
+    <association property="patient_message" javaType="zwf.po.Patient_message"  >
+    <id column="patient_message_id" property="patient_message_id"/>
+    	<result column="ruyuan_time" property="ruyuan_time"/>
+    	<result column="diagnosis_a" property="diagnosis_a"/>
+    </association>
+    <association property="deparment" javaType="zwf.po.Deparment"  >
+    <id column="deparment_id" property="deparment_id"/>
+    	<result column="deparment_name" property="deparment_name"/>
+    </association>
+    <association property="user" javaType="zwf.po.User"  >
+    <id column="user_id" property="user_id"/>
+    	<result column="doctor_name" property="user_name"/>
+    </association>
+    <association property="user1" javaType="zwf.po.User"  >
+    <id column="u1_id" property="user_id"/>
+    	<result column="nurse_name" property="user_name"/>
+    </association>
+    <association property="inspection_item" javaType="zwf.po.Inspection_item"  >
+    <id column="Inspection_item_id" property="Inspection_item_id"/>
+    	<result column="Inspection_item_name" property="Inspection_item_name"/>
+    	<result column="Inspection_item_unit" property="Inspection_item_unit"/>
+    	<result column="Inspection_item_pirce" property="Inspection_item_pirce"/>
+    </association>
+   </resultMap>
+   <select id="select_action_Inspection" resultMap="select_action_InspectionMap" parameterType="Map">
+   		SELECT p.*,i.*,i.inspection_id,p.patient_name,p.patient_meal,p.age,ii.Inspection_item_name,u1.user_name AS nurse_name,i.inspection_time,d.deparment_name,u2.user_name AS doctor_name,i.acceptance_time
+		FROM inspection i
+		LEFT JOIN medical_orders_list_action  mola ON mola.medical_orders_list_action_id = i.medical_orders_list_action_id
+		LEFT JOIN medical_orders_action moa ON moa.medical_orders_action_id = mola.medical_orders_action_id
+		LEFT JOIN inspection_item ii ON ii.Inspection_item_id = i.inspection_item_id
+		LEFT JOIN patient p ON p.patient_id = moa.patient_id
+		LEFT JOIN patient_message pm ON pm.patient_id = p.patient_id
+		LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+		LEFT JOIN `user` u1 ON u1.user_work_id = i.inspector
+		LEFT JOIN `user` u2 ON u2.user_work_id = i.recipients
+		WHERE 1=1
+		<if test="inspection_item_id!=null and inspection_item_id!=''">AND i.inspection_item_id = #{inspection_item_id}</if>
+		<if test="select_deparment_id!=null and select_deparment_id!=''">AND pm.deparment_id = #{select_deparment_id}</if>
+		<if test="patient_name!=null and patient_name!=''">AND p.patient_name like CONCAT('%','${patient_name}','%')</if>
+		<if test="start_ruyuan_time!=null and end_ruyuan_time!=null ">AND i.inspection_time BETWEEN '${start_ruyuan_time}' AND '${end_ruyuan_time}'</if>
+		AND i.recipients IS NOT NULL
+		ORDER BY i.inspection_time DESC
+		<if test="null != beginNumber and null != limit">
+  		LIMIT #{beginNumber},#{limit}
+  		</if>
+	</select>
+	
+	<select id="getCount_action_Inspection" resultType="int">
+		
+		SELECT COUNT(1) 
+		FROM inspection i
+		LEFT JOIN medical_orders_list_action  mola ON mola.medical_orders_list_action_id = i.medical_orders_list_action_id
+		LEFT JOIN medical_orders_action moa ON moa.medical_orders_action_id = mola.medical_orders_action_id
+		LEFT JOIN inspection_item ii ON ii.Inspection_item_id = i.inspection_item_id
+		LEFT JOIN patient p ON p.patient_id = moa.patient_id
+		LEFT JOIN patient_message pm ON pm.patient_id = p.patient_id
+		LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+		LEFT JOIN `user` u1 ON u1.user_work_id = i.inspector
+		LEFT JOIN `user` u2 ON u2.user_work_id = i.recipients
+		WHERE 1=1
+		AND i.recipients IS NOT NULL
+		<if test="inspection_item_id!=null and inspection_item_id!=''">AND i.inspection_item_id = #{inspection_item_id}</if>
+		<if test="select_deparment_id!=null and select_deparment_id!=''">AND pm.deparment_id = #{select_deparment_id}</if>
+		<if test="patient_name!=null and patient_name!=''">AND p.patient_name like CONCAT('%','${patient_name}','%')</if>
+		<if test="start_ruyuan_time!=null and end_ruyuan_time!=null ">AND i.inspection_time BETWEEN '${start_ruyuan_time}' AND '${end_ruyuan_time}'</if>
+   </select> 
+	
+	
+	<update id="action_Inspection" parameterType="Inspection">
+	update inspection
+	<set>
+		inspection_result = 1,		
+			
+	</set>
+	where  inspection_result = 0 and inspection_id = #{select_id}
+	</update>
+	
+	<update id="action_Inspection2" parameterType="Inspection">
+	update inspection
+	<set>
+		inspection_result = 2,		
+			
+	</set>
+	where  inspection_result = 1 and inspection_id = #{select_id}
+	</update>
+	
+	
+	<update id="add_suggest_Inspection" parameterType="Inspection">
+	update inspection i,inspection_list il
+	<set>
+	
+		 i.inspection_suggest = (SELECT GROUP_CONCAT('&lt;',il.Inspection_list_suggest)
+		FROM inspection_list il
+		WHERE il.Inspection_id = #{select_id})
+			
+	</set>
+	 WHERE 1=1
+	 AND i.inspection_id = il.inspection_id
+	 AND i.inspection_id = #{select_id}
+	</update>
+	
+	<resultMap type="Inspection" id="select_show_InspectionMap">
+   <id column="inspection_id" property="inspection_id"/>
+  <result column="medical_orders_list_action_id" property="medical_orders_list_action_id"/>
+  <result column="inspection_item_id" property="inspection_item_id"/>
+  <result column="inspector" property="inspector"/>
+  <result column="inspection_time" property="inspection_time"/>
+  <result column="recipients" property="recipients"/>
+  <result column="acceptance_time" property="acceptance_time"/>
+  <result column="inspection_result" property="inspection_result"/>
+  <association property="medical_orders_list_action" javaType="zwf.po.Medical_Orders_List_Action"  >
+    <id column="medical_orders_list_action_id" property="medical_orders_list_action_id"/>   	
+    </association>
+    <association property="medical_Orders_Action" javaType="zwf.po.Medical_Orders_Action"  >
+    <id column="medical_orders_action_id" property="medical_orders_action_id"/>   	
+    </association>
+    <association property="patient" javaType="zwf.po.Patient"  >
+    <id column="patient_id" property="patient_id"/>
+    	<result column="patient_name" property="patient_name"/>
+    	<result column="patient_meal" property="patient_meal"/>
+    	<result column="age" property="age"/>
+    </association>
+    <association property="patient_message" javaType="zwf.po.Patient_message"  >
+    <id column="patient_message_id" property="patient_message_id"/>
+    	<result column="ruyuan_time" property="ruyuan_time"/>
+    	<result column="diagnosis_a" property="diagnosis_a"/>
+    </association>
+    <association property="deparment" javaType="zwf.po.Deparment"  >
+    <id column="deparment_id" property="deparment_id"/>
+    	<result column="deparment_name" property="deparment_name"/>
+    </association>
+    <association property="user" javaType="zwf.po.User"  >
+    <id column="user_id" property="user_id"/>
+    	<result column="doctor_name" property="user_name"/>
+    </association>
+    <association property="user1" javaType="zwf.po.User"  >
+    <id column="u1_id" property="user_id"/>
+    	<result column="nurse_name" property="user_name"/>
+    </association>
+    <association property="inspection_item" javaType="zwf.po.Inspection_item"  >
+    <id column="Inspection_item_id" property="Inspection_item_id"/>
+    	<result column="Inspection_item_name" property="Inspection_item_name"/>
+    	<result column="Inspection_item_unit" property="Inspection_item_unit"/>
+    	<result column="Inspection_item_pirce" property="Inspection_item_pirce"/>
+    </association>
+   </resultMap>
+   <select id="select_show_Inspection" resultMap="select_show_InspectionMap" parameterType="Map">
+   		<if test="role_id==1"  >
+   		SELECT p.*,i.*,i.inspection_id,p.patient_name,p.patient_meal,p.age,ii.Inspection_item_name,u1.user_name AS nurse_name,i.inspection_time,d.deparment_name,u2.user_name AS doctor_name,i.acceptance_time
+		FROM inspection i
+		LEFT JOIN medical_orders_list_action  mola ON mola.medical_orders_list_action_id = i.medical_orders_list_action_id
+		LEFT JOIN medical_orders_action moa ON moa.medical_orders_action_id = mola.medical_orders_action_id
+		LEFT JOIN inspection_item ii ON ii.Inspection_item_id = i.inspection_item_id
+		LEFT JOIN patient p ON p.patient_id = moa.patient_id
+		LEFT JOIN patient_message pm ON pm.patient_id = p.patient_id
+		LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+		LEFT JOIN `user` u1 ON u1.user_work_id = i.inspector
+		LEFT JOIN `user` u2 ON u2.user_work_id = i.recipients
+		WHERE 1=1
+		AND pm.churuan_time is null
+		<if test="inspection_item_id!=null and inspection_item_id!=''">AND i.inspection_item_id = #{inspection_item_id}</if>
+		<if test="select_deparment_id!=null and select_deparment_id!=''">AND pm.deparment_id = #{select_deparment_id}</if>
+		<if test="patient_name!=null and patient_name!=''">AND p.patient_name like CONCAT('%','${patient_name}','%')</if>
+		<if test="start_ruyuan_time!=null and end_ruyuan_time!=null ">AND i.inspection_time BETWEEN '${start_ruyuan_time}' AND '${end_ruyuan_time}'</if>
+		AND i.inspection_result = 2
+		AND i.recipients IS NOT NULL
+		ORDER BY i.inspection_time DESC
+		</if>
+		<if test="role_id==6"  >
+   		SELECT p.*,i.*,i.inspection_id,p.patient_name,p.patient_meal,p.age,ii.Inspection_item_name,u1.user_name AS nurse_name,i.inspection_time,d.deparment_name,u2.user_name AS doctor_name,i.acceptance_time
+		FROM inspection i
+		LEFT JOIN medical_orders_list_action  mola ON mola.medical_orders_list_action_id = i.medical_orders_list_action_id
+		LEFT JOIN medical_orders_action moa ON moa.medical_orders_action_id = mola.medical_orders_action_id
+		LEFT JOIN inspection_item ii ON ii.Inspection_item_id = i.inspection_item_id
+		LEFT JOIN patient p ON p.patient_id = moa.patient_id
+		LEFT JOIN patient_message pm ON pm.patient_id = p.patient_id
+		LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+		LEFT JOIN `user` u1 ON u1.user_work_id = i.inspector
+		LEFT JOIN `user` u2 ON u2.user_work_id = i.recipients
+		WHERE 1=1
+		AND pm.churuan_time is null
+		<if test="inspection_item_id!=null and inspection_item_id!=''">AND i.inspection_item_id = #{inspection_item_id}</if>
+		<if test="select_deparment_id!=null and select_deparment_id!=''">AND pm.deparment_id = #{select_deparment_id}</if>
+		<if test="patient_name!=null and patient_name!=''">AND p.patient_name like CONCAT('%','${patient_name}','%')</if>
+		<if test="start_ruyuan_time!=null and end_ruyuan_time!=null ">AND i.inspection_time BETWEEN '${start_ruyuan_time}' AND '${end_ruyuan_time}'</if>
+		AND i.inspection_result = 2
+		AND i.recipients IS NOT NULL
+		ORDER BY i.inspection_time DESC
+		</if>
+		<if test="role_id==5">
+   		SELECT p.*,i.*,i.inspection_id,p.patient_name,p.patient_meal,p.age,ii.Inspection_item_name,u1.user_name AS nurse_name,i.inspection_time,d.deparment_name,u2.user_name AS doctor_name,i.acceptance_time
+		FROM inspection i
+		LEFT JOIN medical_orders_list_action  mola ON mola.medical_orders_list_action_id = i.medical_orders_list_action_id
+		LEFT JOIN medical_orders_action moa ON moa.medical_orders_action_id = mola.medical_orders_action_id
+		LEFT JOIN inspection_item ii ON ii.Inspection_item_id = i.inspection_item_id
+		LEFT JOIN patient p ON p.patient_id = moa.patient_id
+		LEFT JOIN patient_message pm ON pm.patient_id = p.patient_id
+		LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+		LEFT JOIN `user` u1 ON u1.user_work_id = i.inspector
+		LEFT JOIN `user` u2 ON u2.user_work_id = i.recipients
+		LEFT JOIN `user` u3 ON u3.user_work_id = pm.doctor_id
+		WHERE 1=1
+		AND pm.churuan_time is null
+		AND u3.user_work_id = #{user_work_id}
+		<if test="inspection_item_id!=null and inspection_item_id!=''">AND i.inspection_item_id = #{inspection_item_id}</if>
+		<if test="select_deparment_id!=null and select_deparment_id!=''">AND pm.deparment_id = #{select_deparment_id}</if>
+		<if test="patient_name!=null and patient_name!=''">AND p.patient_name like CONCAT('%','${patient_name}','%')</if>
+		<if test="start_ruyuan_time!=null and end_ruyuan_time!=null ">AND i.inspection_time BETWEEN '${start_ruyuan_time}' AND '${end_ruyuan_time}'</if>
+		AND i.inspection_result = 2
+		AND i.recipients IS NOT NULL
+		ORDER BY i.inspection_time DESC
+		</if>
+		<if test="null != beginNumber and null != limit">
+  		LIMIT #{beginNumber},#{limit}
+  		</if>
+	</select>
+	
+	<select id="getCount_show_Inspection" resultType="int">
+		<if test="role_id==1">
+		SELECT COUNT(1) 
+		FROM inspection i
+		LEFT JOIN medical_orders_list_action  mola ON mola.medical_orders_list_action_id = i.medical_orders_list_action_id
+		LEFT JOIN medical_orders_action moa ON moa.medical_orders_action_id = mola.medical_orders_action_id
+		LEFT JOIN inspection_item ii ON ii.Inspection_item_id = i.inspection_item_id
+		LEFT JOIN patient p ON p.patient_id = moa.patient_id
+		LEFT JOIN patient_message pm ON pm.patient_id = p.patient_id
+		LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+		LEFT JOIN `user` u1 ON u1.user_work_id = i.inspector
+		LEFT JOIN `user` u2 ON u2.user_work_id = i.recipients
+		WHERE 1=1
+		AND pm.churuan_time is null
+		AND i.inspection_result = 2
+		AND i.recipients IS NOT NULL
+		<if test="inspection_item_id!=null and inspection_item_id!=''">AND i.inspection_item_id = #{inspection_item_id}</if>
+		<if test="select_deparment_id!=null and select_deparment_id!=''">AND pm.deparment_id = #{select_deparment_id}</if>
+		<if test="patient_name!=null and patient_name!=''">AND p.patient_name like CONCAT('%','${patient_name}','%')</if>
+		<if test="start_ruyuan_time!=null and end_ruyuan_time!=null ">AND i.inspection_time BETWEEN '${start_ruyuan_time}' AND '${end_ruyuan_time}'</if>
+   		</if>
+   		<if test="role_id==6">
+		SELECT COUNT(1) 
+		FROM inspection i
+		LEFT JOIN medical_orders_list_action  mola ON mola.medical_orders_list_action_id = i.medical_orders_list_action_id
+		LEFT JOIN medical_orders_action moa ON moa.medical_orders_action_id = mola.medical_orders_action_id
+		LEFT JOIN inspection_item ii ON ii.Inspection_item_id = i.inspection_item_id
+		LEFT JOIN patient p ON p.patient_id = moa.patient_id
+		LEFT JOIN patient_message pm ON pm.patient_id = p.patient_id
+		LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+		LEFT JOIN `user` u1 ON u1.user_work_id = i.inspector
+		LEFT JOIN `user` u2 ON u2.user_work_id = i.recipients
+		WHERE 1=1
+		AND pm.churuan_time is null
+		AND i.inspection_result = 2
+		AND i.recipients IS NOT NULL
+		<if test="inspection_item_id!=null and inspection_item_id!=''">AND i.inspection_item_id = #{inspection_item_id}</if>
+		<if test="select_deparment_id!=null and select_deparment_id!=''">AND pm.deparment_id = #{select_deparment_id}</if>
+		<if test="patient_name!=null and patient_name!=''">AND p.patient_name like CONCAT('%','${patient_name}','%')</if>
+		<if test="start_ruyuan_time!=null and end_ruyuan_time!=null ">AND i.inspection_time BETWEEN '${start_ruyuan_time}' AND '${end_ruyuan_time}'</if>
+   		</if>
+   		<if test="role_id==5">
+   		SELECT COUNT(1)
+   		FROM inspection i
+		LEFT JOIN medical_orders_list_action  mola ON mola.medical_orders_list_action_id = i.medical_orders_list_action_id
+		LEFT JOIN medical_orders_action moa ON moa.medical_orders_action_id = mola.medical_orders_action_id
+		LEFT JOIN inspection_item ii ON ii.Inspection_item_id = i.inspection_item_id
+		LEFT JOIN patient p ON p.patient_id = moa.patient_id
+		LEFT JOIN patient_message pm ON pm.patient_id = p.patient_id
+		LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+		LEFT JOIN `user` u1 ON u1.user_work_id = i.inspector
+		LEFT JOIN `user` u2 ON u2.user_work_id = i.recipients
+		LEFT JOIN `user` u3 ON u3.user_work_id = pm.doctor_id
+		WHERE 1=1
+		AND pm.churuan_time is null
+		AND u3.user_work_id = #{user_work_id}
+		<if test="inspection_item_id!=null and inspection_item_id!=''">AND i.inspection_item_id = #{inspection_item_id}</if>
+		<if test="select_deparment_id!=null and select_deparment_id!=''">AND pm.deparment_id = #{select_deparment_id}</if>
+		<if test="patient_name!=null and patient_name!=''">AND p.patient_name like CONCAT('%','${patient_name}','%')</if>
+		<if test="start_ruyuan_time!=null and end_ruyuan_time!=null ">AND i.inspection_time BETWEEN '${start_ruyuan_time}' AND '${end_ruyuan_time}'</if>
+		AND i.inspection_result = 2
+		AND i.recipients IS NOT NULL
+		ORDER BY i.inspection_time DESC
+   		</if>
+   </select> 
+   
+   
+   
+   <select id="show_suggest_Inspection" resultType="String">
+		
+		SELECT i.inspection_suggest
+		FROM inspection i
+		WHERE i.inspection_id = #{select_id}
+		
+   </select> 
+   
+</mapper>

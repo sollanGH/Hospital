@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="zwf.dao.Medical_Orders_ActionDao">
+
+	
+	
+   
+   
+   <!--添加  -->
+	<insert id="addMedical_Orders_action" parameterType="Medical_Orders_Action">
+	INSERT INTO medical_orders_action(patient_id,start_time,doctor_id,check_state,medical_orders_id)
+	SELECT patient_id,#{start_time},doctor_id,0,medical_orders_id
+	FROM medical_orders mo
+	WHERE NOT EXISTS(
+	SELECT *
+	FROM medical_orders_action moa   
+	WHERE moa.medical_orders_id = mo.medical_orders_id
+	AND UNIX_TIMESTAMP(moa.start_time) = UNIX_TIMESTAMP(#{start_time}))
+	AND mo.patient_id = #{patient_id}
+	</insert>
+   
+  
+   
+   <!-- 查询全部病人的医嘱执行情况 -->
+	<resultMap type="Medical_Orders_Action" id="select_today_Action_Medical_OrdersDaoMap">
+   <id column="medical_orders_action_id" property="medical_orders_action_id"/>
+  <result column="doctor_id" property="doctor_id"/>
+  <result column="check_state" property="check_state"/>
+  <result column="sum_advance_payment" property="sum_advance_payment"/>
+  <result column="sum_price" property="sum_price"/>
+  <result column="after_expenses" property="after_expenses"/>
+  <result column="medical_orders_id" property="medical_orders_id"/>
+   <association property="patient" javaType="zwf.po.Patient"  >
+   	<id column="patient_id" property="patient_id"/>
+   	<result column="patient_name" property="patient_name"/>
+   	<result column="patient_meal" property="patient_meal"/>
+   	<result column="age" property="age"/>
+   </association>
+    <association property="patient_message" javaType="zwf.po.Patient_message"  >
+    <id column="patient_message_id" property="patient_message_id"/>
+    	<result column="ruyuan_time" property="ruyuan_time"/>
+    	<result column="diagnosis_a" property="diagnosis_a"/>
+    </association>
+    <association property="bed" javaType="zwf.po.Bed"  >
+    <id column="bed_id" property="bed_id"/>
+    	<result column="bed_name" property="bed_name"/>
+    </association>
+    <association property="room" javaType="zwf.po.Room"  >
+    <id column="room_id" property="room_id"/>
+    	<result column="room_name" property="room_name"/>
+    </association>
+    <association property="deparment" javaType="zwf.po.Deparment"  >
+    <id column="deparment_id" property="deparment_id"/>
+    	<result column="deparment_name" property="deparment_name"/>
+    </association>
+     <association property="user" javaType="zwf.po.User"  >
+    <id column="user_id" property="user_id"/>
+    	<result column="user_name" property="user_name"/>
+    </association>
+    <association property="payment" javaType="zwf.po.Payment"  >
+    <id column="payment_id" property="payment_id"/>
+    	<result column="operating_expenses" property="operating_expenses"/>
+    	<result column="refunds" property="refunds"/>
+    	<result column="advance_payment" property="advance_payment"/>
+    	<result column="advance_payment_time" property="advance_payment_time"/>
+    	<result column="payee" property="payee"/>
+    	<result column="supplementary_payment" property="supplementary_payment"/>
+    	<result column="drug_costs" property="drug_costs"/>
+    	<result column="survey_fee" property="survey_fee"/>
+    	<result column="settle_accounts" property="settle_accounts"/>
+    	<result column="settle_accounts_time" property="settle_accounts_time"/>
+		<result column="payment_status" property="payment_status"/>    
+    </association>
+   </resultMap>
+	<select id="select_today_Action_Medical_Orders" resultMap="select_today_Action_Medical_OrdersDaoMap" parameterType="Map">
+		<if test="role_id==1">
+		SELECT u.user_name,mo.check_state,p.patient_id,b.bed_name,p.patient_name,p.patient_meal,p.age,pm.ruyuan_time,mo.medical_orders_id,
+		d.deparment_name,r.room_name,mo.doctor_id,pm.diagnosis_a,SUM(pay.advance_payment) AS sum_advance_payment,mo.medical_orders_action_id,
+	    SUM(pay.sum_expenses) AS sum_price,SUM(pay.advance_payment) - SUM(pay.sum_expenses) AS after_expenses
+		FROM patient p,patient_message pm,deparment d,room r,medical_orders_action mo,bed b,`user` u,payment pay
+		WHERE p.patient_id = pm.patient_id AND p.patient_id = mo.patient_id
+		AND pm.deparment_id = d.deparment_id AND pm.room_id = r.room_id 
+		AND pm.bed_id =b.bed_id AND u.user_work_id = mo.doctor_id
+		AND pay.patient_id = p.patient_id
+		AND pm.churuan_time is null
+		AND UNIX_TIMESTAMP(mo.start_time) = UNIX_TIMESTAMP(#{start_time})
+		GROUP BY p.patient_id 
+		ORDER BY pm.ruyuan_time DESC
+		</if>
+		<if test="role_id==4">
+		SELECT u.user_name,mo.check_state,p.patient_id,b.bed_name,p.patient_name,p.patient_meal,p.age,pm.ruyuan_time,mo.medical_orders_id,
+		d.deparment_name,r.room_name,mo.doctor_id,pm.diagnosis_a,SUM(pay.advance_payment) AS sum_advance_payment,mo.medical_orders_action_id,
+	    SUM(pay.sum_expenses) AS sum_price,SUM(pay.advance_payment) - SUM(pay.sum_expenses) AS after_expenses
+		FROM patient p,patient_message pm,deparment d,room r,medical_orders_action mo,bed b,`user` u,payment pay
+		WHERE p.patient_id = pm.patient_id AND p.patient_id = mo.patient_id
+		AND pm.deparment_id = d.deparment_id AND pm.room_id = r.room_id 
+		AND pm.bed_id =b.bed_id AND u.user_work_id = mo.doctor_id
+		AND pay.patient_id = p.patient_id
+		AND d.deparment_id = #{deparment_id}
+		AND pm.churuan_time is null
+		AND UNIX_TIMESTAMP(mo.start_time) = UNIX_TIMESTAMP(#{start_time})
+		GROUP BY p.patient_id
+		ORDER BY pm.ruyuan_time DESC
+		</if>
+		<if test="role_id!=4 and role_id!=1">
+		SELECT u.user_name,mo.check_state,p.patient_id,b.bed_name,p.patient_name,p.patient_meal,p.age,pm.ruyuan_time,mo.medical_orders_id,
+		d.deparment_name,r.room_name,mo.doctor_id,pm.diagnosis_a,SUM(pay.advance_payment) AS sum_advance_payment,mo.medical_orders_action_id,
+	    SUM(pay.sum_expenses) AS sum_price,SUM(pay.advance_payment) - SUM(pay.sum_expenses) AS after_expenses
+		FROM patient p,patient_message pm,deparment d,room r,medical_orders_action mo,bed b,`user` u,payment pay
+		WHERE p.patient_id = pm.patient_id AND p.patient_id = mo.patient_id
+		AND pm.deparment_id = d.deparment_id AND pm.room_id = r.room_id 
+		AND pm.bed_id =b.bed_id AND u.user_work_id = mo.doctor_id
+		AND pay.patient_id = p.patient_id
+		AND pm.doctor_id = #{user_work_id}
+		AND pm.churuan_time is null
+		AND UNIX_TIMESTAMP(mo.start_time) = UNIX_TIMESTAMP(#{start_time})
+		GROUP BY p.patient_id
+		ORDER BY pm.ruyuan_time DESC
+		</if>
+		<if test="null != beginNumber and null != limit">
+  		LIMIT #{beginNumber},#{limit}
+  		</if>
+  		
+	</select>
+	   
+    
+    <select id="getCount_today_Action_Medical_Orders" resultType="int">
+	 	<if test="role_id==1">
+  		SELECT COUNT(1) 
+	    FROM patient p,patient_message pm,deparment d,room r,medical_orders_action mo,bed b
+		WHERE p.patient_id = pm.patient_id AND p.patient_id = mo.patient_id
+		AND pm.deparment_id = d.deparment_id AND pm.room_id = r.room_id 
+		AND pm.bed_id =b.bed_id 
+		AND pm.churuan_time is null
+		AND UNIX_TIMESTAMP(mo.start_time) = UNIX_TIMESTAMP(#{start_time})
+		</if>
+		<if test="role_id==4">
+		SELECT COUNT(1)
+		FROM patient p,patient_message pm,deparment d,room r,medical_orders_action mo,bed b
+		WHERE p.patient_id = pm.patient_id AND p.patient_id = mo.patient_id
+		AND pm.deparment_id = d.deparment_id AND pm.room_id = r.room_id 
+		AND pm.bed_id =b.bed_id 
+		AND pm.churuan_time is null
+		AND d.deparment_id = #{deparment_id}
+		AND UNIX_TIMESTAMP(mo.start_time) = UNIX_TIMESTAMP(#{start_time})
+		</if>
+		<if test="role_id!=4 and role_id!=1">
+		SELECT COUNT(1)
+		FROM patient p,patient_message pm,deparment d,room r,medical_orders_action mo,bed b
+		WHERE p.patient_id = pm.patient_id AND p.patient_id = mo.patient_id
+		AND pm.deparment_id = d.deparment_id AND pm.room_id = r.room_id 
+		AND pm.bed_id =b.bed_id 
+		AND pm.churuan_time is null
+		AND pm.doctor_id = #{user_work_id}
+		AND UNIX_TIMESTAMP(mo.start_time) = UNIX_TIMESTAMP(#{start_time})
+		</if>
+   </select>
+    
+    <update id="update_finish_action_Medical_Orders_Action" parameterType="Medical_Orders_Action">
+	update medical_orders_action
+	<set>
+		check_state= 1 	 	
+	</set>
+	where  check_state = 0 and medical_orders_action_id = #{medical_orders_action_id}
+	</update>
+	
+	<update id="update_not_finish_action_Medical_Orders_Action" parameterType="Medical_Orders_Action">
+	update medical_orders_action
+	<set>
+		check_state= 0 	 	
+	</set>
+	where  check_state = 1 and medical_orders_action_id = #{medical_orders_action_id}
+	</update>
+   
+   
+   <select id="select_medical_Orders_Action_id" resultType="int">
+  		SELECT medical_orders_action_id
+		FROM medical_orders_action
+		WHERE patient_id=#{patient_id} AND start_time=#{start_time}
+   </select>
+   
+</mapper>

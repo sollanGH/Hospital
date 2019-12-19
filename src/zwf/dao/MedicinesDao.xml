@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="zwf.dao.MedicinesDao">
+
+	
+	<!--查询  -->
+	<select id="selectMedicines" resultType="Medicines" parameterType="Map">
+		SELECT *
+		FROM medicines
+		WHERE 1=1 
+		<if test="medicines_category >0 "  >
+		AND medicines_category = #{medicines_category} 
+		</if>
+		<if test="condition !=null "  >
+		AND (medicines_py like CONCAT('%','${condition}','%') OR medicines_name like CONCAT('%','${condition}','%'))
+		</if>
+	</select> 
+	
+	<select id="gstCountMedicines" resultType="int">
+  		SELECT COUNT(1) 
+  		FROM medicines
+  		WHERE medicines_py like CONCAT('%','${condition}','%') OR medicines_name like CONCAT('%','${condition}','%')
+   </select>
+   
+   
+   
+   
+   
+   
+</mapper>

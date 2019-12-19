@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+	<settings>
+    
+    <setting name="logImpl" value="LOG4J"/>
+    
+  </settings>
+    <!--配置别名 -->
+    <typeAliases>
+        
+        <typeAlias type="zwf.po.Deparment" alias="deparment"/>
+        <typeAlias type="zwf.po.User" alias="user"/>
+        <typeAlias type="zwf.po.Room" alias="room"/>
+        <typeAlias type="zwf.po.Bed" alias="bed"/>
+        <typeAlias type="zwf.po.Patient" alias="patient"/>
+        <typeAlias type="zwf.po.Patient_message" alias="patient_message"/>
+        <typeAlias type="zwf.po.Medicines" alias="medicines"/>
+        <typeAlias type="zwf.po.Medical_Orders_List" alias="medical_Orders_List"/>
+        <typeAlias type="zwf.po.Medical_Orders_List_Action" alias="medical_Orders_List_Action"/>
+        <typeAlias type="zwf.po.Medical_Orders" alias="Medical_Orders"/>
+        <typeAlias type="zwf.po.Medical_Orders_Action" alias="Medical_Orders_Action"/>
+        <typeAlias type="zwf.po.Payment" alias="payment"/>
+        <typeAlias type="zwf.po.Requisition" alias="requisition"/>
+        <typeAlias type="zwf.po.Requisition_List" alias="requisition_List"/>
+        <typeAlias type="zwf.po.Project" alias="project"/>
+        <typeAlias type="zwf.po.Inspection_item" alias="Inspection_item"/>
+        <typeAlias type="zwf.po.Inspection_item_list" alias="Inspection_item_list"/>
+        <typeAlias type="zwf.po.Storage" alias="Storage"/>
+        <typeAlias type="zwf.po.Storage_list" alias="Storage_list"/>
+        <typeAlias type="zwf.po.Inspection" alias="Inspection"/>
+        <typeAlias type="zwf.po.Inspection_list" alias="Inspection_list"/>
+    </typeAliases>
+</configuration>

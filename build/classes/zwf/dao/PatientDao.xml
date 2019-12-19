@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="zwf.dao.PatientDao">
+
+	
+	
+	<!--添加  -->
+	<insert id="addPatient" parameterType="patient">
+	insert into patient(patient_id,patient_name,brith_day,marital_state,patient_meal,brith_place,id_number,phone,work_place,age,apatient_name,aphone,relation,insurance)
+	values(#{patient_id},#{patient_name},#{brith_day},#{marital_state},#{patient_meal},#{brith_place},#{id_number},#{phone},#{work_place},#{age},#{apatient_name},#{aphone},#{relation},#{insurance})
+	</insert>
+	
+	<!--更新  -->
+	<update id="updatePatient" parameterType="patient">
+	update patient
+	<set>
+	 <if test="patient_name!=null and patient_name!='' ">
+	 	patient_name=#{patient_name},
+	 </if>
+	<!--  这个错的意思是：java.sql.Timestamp和java.lang.String无效的比较
+       brith_day !=  ''
+错误的原因是：拿传入的时间类型参数与空字符串进行比较就会报这个异常 -->
+	  <if test="brith_day!=null ">
+	 	brith_day=#{brith_day},
+	 </if> 
+	 <if test="marital_state!=null and marital_state!='' ">
+	 	marital_state=#{marital_state},
+	 </if>
+	 <if test="brith_place!=null and brith_place!='' ">
+	 	brith_place=#{brith_place},
+	 </if>
+	 <if test="patient_meal!=null and patient_meal!='' ">
+	 	patient_meal=#{patient_meal},
+	 </if>
+	 <if test="id_number!=null and id_number!='' ">
+	 	id_number=#{id_number},
+	 </if>
+	 <if test="phone!=null and phone!='' ">
+	 	phone=#{phone},
+	 </if>
+	 <if test="work_place !=null">
+	 	work_place=#{work_place},
+	 </if>
+	 <if test="age!=null">
+	 	age=#{age},
+	 </if>
+	 <if test="apatient_name!=null">
+	 	apatient_name=#{apatient_name},
+	 </if>
+	 <if test="aphone !=null">
+	 	aphone=#{aphone},
+	 </if>
+	 <if test="relation !=null">
+	 	relation=#{relation},
+	 </if>
+	 <if test="insurance !=null">
+	 	insurance=#{insurance},
+	 </if>
+	</set>
+	where patient_id=#{patient_id}
+	</update>
+	
+	<!--查询  -->
+	
+	
+	<!--普通查询  -->
+	<select id="selectAllPatient" resultType="patient" parameterType="Map">
+		SELECT * 
+		FROM patient
+		WHERE 1=1 
+		<if test="patient_id!=null and patient_id!=''">AND patient_id like CONCAT('%','${patient_id}','%')</if>
+		<if test="null != beginNumber and null != limit">
+  		LIMIT #{beginNumber},#{limit}
+  		</if>
+	</select>
+
+	<!--查询总数  -->
+	<select id="getCountPatient" resultType="int">
+  		SELECT COUNT(1) 
+  		FROM patient
+		WHERE 1=1 
+		<if test="patient_id!=null and patient_id!=''">AND patient_id like CONCAT('%','${patient_id}','%')</if>
+		
+   </select>
+   
+   <delete id="deletePatient" parameterType="String">
+		delete from patient where patient_id in (${patient_id})
+	</delete>
+   
+</mapper>

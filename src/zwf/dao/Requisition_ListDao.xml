@@ -1,0 +1,429 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="zwf.dao.Requisition_ListDao">
+	
+	<!--添加  -->
+	<insert id="addRequisition_List" parameterType="requisition_List">
+	<!-- INSERT INTO requisition_list (requisition_id,medical_orders_id,medicined_id,number,sum_number,take_requisition_time)
+	SELECT #{requisition_id},mola.medical_orders_action_id,mola.medicined_id,mola.number,mola.sum_number,#{take_requisition_time}
+	FROM medical_orders_list_action mola
+	WHERE NOT EXISTS(
+	SELECT * FROM requisition_list 
+	WHERE requisition_list.medical_orders_id = mola.medical_orders_action_id)
+	AND mola.types = 1 AND mola.medical_orders_list_action_id in (${select_id}) -->
+	
+	INSERT INTO requisition_list (requisition_id,medical_orders_id,medicined_id,number,sum_number,take_requisition_time)
+	SELECT #{requisition_id},mola.medical_orders_list_action_id,mola.medicined_id,mola.number,mola.sum_number,#{take_requisition_time}
+	FROM medical_orders_list_action mola
+	WHERE NOT EXISTS(
+	SELECT * FROM requisition_list 
+	WHERE requisition_list.medical_orders_id = mola.medical_orders_list_action_id)
+	AND mola.types = 1 AND mola.medical_orders_list_action_id in (${select_id})
+
+	<!-- INSERT INTO requisition_list (requisition_id,medical_orders_id,medicined_id,number,take_requisition_time)
+	
+	SELECT #{requisition_id},medical_orders_id,medicined_id,number,#{take_requisition_time} 
+	
+	FROM medical_orders_list WHERE medical_orders_list_id in (${select_id}) -->
+	</insert>
+	
+	<!-- insert into requisition_list(requisition_id,medical_orders_id,medicined_id,number,pharmacist,take_requisition_time)
+	values(#{requisition_id},#{medical_orders_id},#{medicined_id},#{number},#{pharmacist},#{take_requisition_time}) -->
+	
+		
+	<!--查询单个病人的开药详情  -->
+	<resultMap type="requisition_List" id="selectRequisition_ListMap">
+   <id column="requisition_list_id" property="requisition_list_id"/>
+  <result column="requisition_id" property="requisition_id"/>
+  <result column="medical_orders_id" property="medical_orders_id"/>
+  <result column="medicined_id" property="medicined_id"/>
+  <result column="number" property="number"/>
+  <result column="sum_number" property="sum_number"/>
+  <result column="pharmacist" property="pharmacist"/>
+  <result column="check_requisition" property="check_requisition"/>
+  <result column="take_requisition" property="take_requisition"/>
+  <result column="take_requisition_time" property="take_requisition_time"/>
+  <result column="check_requisition_time" property="check_requisition_time"/>
+   <result column="action_requisition_time" property="action_requisition_time"/>
+   <result column="requisition_status" property="requisition_status"/>
+   <result column="check_return_requisition_time" property="check_return_requisition_time"/>
+   <result column="action_return_requisition_time" property="action_return_requisition_time"/>
+   <association property="requisition" javaType="zwf.po.Requisition"  >
+   	<id column="requisition_id" property="requisition_id"/>
+   	<result column="start_time" property="start_time"/>
+   	<result column="nurse_id" property="nurse_id"/>
+   	<result column="check_state" property="check_state"/>
+   </association>
+    <association property="medicines" javaType="zwf.po.Medicines"  >
+    <id column="medicines_id" property="medicines_id"/>
+    	<result column="medicines_name" property="medicines_name"/>
+    	<result column="medicines_form" property="medicines_form"/>
+    	<result column="medicines_specification" property="medicines_specification"/>
+    	<result column="medicines_number" property="medicines_number"/>
+    	<result column="medicines_unit" property="medicines_unit"/>
+    	<result column="medicines_price" property="medicines_price"/>
+    	<result column="condition" property="condition"/>
+    </association>
+    <association property="patient" javaType="zwf.po.Patient"  >
+    <id column="patient_id" property="patient_id"/>
+    	<result column="patient_name" property="patient_name"/>
+    	<result column="patient_meal" property="patient_meal"/>
+    </association>
+    <association property="patient_message" javaType="zwf.po.Patient_message"  >
+    <id column="patient_message_id" property="patient_message_id"/>
+    	<result column="ruyuan_time" property="ruyuan_time"/>
+    	<result column="diagnosis_a" property="diagnosis_a"/>
+    </association>
+    <association property="deparment" javaType="zwf.po.Deparment"  >
+    <id column="deparment_id" property="deparment_id"/>
+    	<result column="deparment_name" property="deparment_name"/>
+    </association>
+    <association property="bed" javaType="zwf.po.Bed"  >
+    <id column="bed_id" property="bed_id"/>
+    	<result column="bed_name" property="bed_name"/>
+    </association>
+    <association property="user" javaType="zwf.po.User"  >
+    <id column="user_id" property="user_id"/>
+    	<result column="user_name" property="user_name"/>
+    </association>
+    <association property="medical_orders_list_action" javaType="zwf.po.Medical_Orders_List_Action"  >
+    <id column="medical_orders_list_action_id" property="medical_orders_list_action_id"/>
+    	<result column="speed" property="speed"/>
+    	<result column="ways" property="ways"/>
+    	<result column="direction" property="direction"/>
+    </association>
+   </resultMap>
+	
+	
+	<select id="selectRequisition_List" resultMap="selectRequisition_ListMap" parameterType="Map">
+		SELECT mola.direction,mola.speed,mola.ways,bed.bed_name,d.deparment_name,reql.*,m.*,u.*,req.*,p.*
+		FROM requisition_list reql LEFT JOIN requisition req ON reql.requisition_id = req.requisition_id
+		LEFT JOIN medicines m ON m.medicines_id = reql.medicined_id
+		LEFT JOIN user u ON u.user_work_id = reql.pharmacist
+		LEFT JOIN patient p ON p.patient_id = req.patient_id
+		LEFT JOIN patient_message pm ON p.patient_id = pm.patient_id  
+		LEFT JOIN  bed ON bed.bed_id = pm.bed_id
+		LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+		LEFT JOIN medical_orders_list_action mola ON mola.medical_orders_list_action_id = reql.medical_orders_id    
+		WHERE 1=1 
+		 <if test="requisition_id!=null">
+		 AND req.requisition_id = #{requisition_id}
+		 </if>
+		 <if test="requisition_status!=null ">AND reql.requisition_status = #{requisition_status}</if>
+		 <if test="deparment_id!=null and deparment_id!=''">AND d.deparment_id = #{deparment_id}</if>
+		 <if test="patient_name!=null and patient_name!=''">AND p.patient_name like CONCAT('%','${patient_name}','%')</if>
+		<if test="patient_id!=null and patient_id!=''">AND p.patient_id like CONCAT('%','${patient_id}','%')</if>
+		<if test="start_ruyuan_time!=null and end_ruyuan_time!=null ">AND req.start_time BETWEEN '${start_ruyuan_time}' AND '${end_ruyuan_time}'</if>
+		ORDER BY reql.take_requisition_time	DESC
+		<if test="null != beginNumber and null != limit">
+  		LIMIT #{beginNumber},#{limit}
+  		</if>
+	</select>
+	
+	<select id="getCountRequisition_List" resultType="int">
+  		SELECT COUNT(1) 
+  		FROM requisition_list reql LEFT JOIN requisition req ON reql.requisition_id = req.requisition_id
+		LEFT JOIN medicines m ON m.medicines_id = reql.medicined_id
+		LEFT JOIN user u ON u.user_work_id = reql.pharmacist
+		LEFT JOIN patient p ON p.patient_id = req.patient_id
+		LEFT JOIN patient_message pm ON p.patient_id = pm.patient_id  
+		LEFT JOIN  bed ON bed.bed_id = pm.bed_id
+		LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+		LEFT JOIN medical_orders_list_action mola ON mola.medical_orders_list_action_id = reql.medical_orders_id 
+		WHERE 1=1 
+		 <if test="requisition_id!=null">
+		 AND req.requisition_id = #{requisition_id}
+		 </if>
+		 <if test="requisition_status!=null ">AND reql.requisition_status = #{requisition_status}</if>
+		 <if test="deparment_id!=null and deparment_id!=''">AND d.deparment_id = #{deparment_id}</if>
+		 <if test="patient_name!=null and patient_name!=''">AND p.patient_name like CONCAT('%','${patient_name}','%')</if>
+		<if test="patient_id!=null and patient_id!=''">AND p.patient_id like CONCAT('%','${patient_id}','%')</if>
+		<if test="start_ruyuan_time!=null and end_ruyuan_time!=null ">AND req.start_time BETWEEN '${start_ruyuan_time}' AND '${end_ruyuan_time}'</if>
+		ORDER BY reql.take_requisition_time
+		
+   </select>
+   
+   <!--药品校对  -->
+	<update id="updateRequisition_List" parameterType="requisition_List">
+	update requisition_list,medicines
+	<set>
+	 <if test="check_requisition_time!=null">
+	 	check_requisition_time=#{check_requisition_time},
+	 </if>
+	 <if test="check_requisition!=null">
+	 	check_requisition=#{check_requisition},
+	 </if>
+	 <if test="pharmacist!=null">
+	 	pharmacist=#{pharmacist},
+	 </if>
+	 
+	 requisition_status = 1,
+	 
+	 medicines.medicines_number = medicines.medicines_number - requisition_list.sum_number,
+	</set>
+	where  check_requisition = 0 
+	AND requisition_list.medicined_id = medicines.medicines_id 
+	AND requisition_list.sum_number &lt;= medicines.medicines_number
+	AND requisition_list_id in (${select_id})
+	</update>
+   <!--取消校对  -->
+	<update id="cancelRequisition_List" parameterType="requisition_List">
+	update requisition_list,medicines
+	<set>	 
+	 	check_requisition_time=NULL,	
+	 <if test="check_requisition!=null">
+	 	check_requisition=#{check_requisition},
+	 </if>
+		 medicines.medicines_number = medicines.medicines_number + requisition_list.sum_number,
+	 	pharmacist=NULL,
+	 	requisition_status = NULL,
+	</set>
+	where  check_requisition = 1 
+	AND requisition_list.medicined_id = medicines.medicines_id
+	and requisition_list_id in (${select_id})
+	</update>
+	<!--发药  -->
+	<update id="actionRequisition_List" parameterType="requisition_List">
+	update requisition_list
+	<set>		
+	 	take_requisition= #{take_requisition},	
+	 <if test="action_requisition_time!=null">
+	 	action_requisition_time=#{action_requisition_time},
+	 </if>
+	 requisition_status = 2,
+	</set>
+	where  check_requisition = 1 and requisition_list_id in (${select_id})
+	</update> 
+	
+	
+	<!--查询单个病人的开药详情  -->
+	<resultMap type="requisition_List" id="printf_selectRequisition_ListMap">
+   <id column="requisition_list_id" property="requisition_list_id"/>
+  <result column="requisition_id" property="requisition_id"/>
+  <result column="medical_orders_id" property="medical_orders_id"/>
+  <result column="medicined_id" property="medicined_id"/>
+  <result column="number" property="number"/>
+  <result column="pharmacist" property="pharmacist"/>
+  <result column="check_requisition" property="check_requisition"/>
+  <result column="take_requisition" property="take_requisition"/>
+  <result column="take_requisition_time" property="take_requisition_time"/>
+  <result column="check_requisition_time" property="check_requisition_time"/>
+   <result column="action_requisition_time" property="action_requisition_time"/>
+   <association property="requisition" javaType="zwf.po.Requisition"  >
+   	<id column="requisition_id" property="requisition_id"/>
+   	<result column="start_time" property="start_time"/>
+   	<result column="nurse_id" property="nurse_id"/>
+   	<result column="check_state" property="check_state"/>
+   </association>
+    <association property="medicines" javaType="zwf.po.Medicines"  >
+    <id column="medicines_id" property="medicines_id"/>
+    	<result column="medicines_name" property="medicines_name"/>
+    	<result column="medicines_form" property="medicines_form"/>
+    	<result column="medicines_specification" property="medicines_specification"/>
+    	<result column="medicines_number" property="medicines_number"/>
+    	<result column="medicines_unit" property="medicines_unit"/>
+    	<result column="medicines_price" property="medicines_price"/>
+    	<result column="condition" property="condition"/>
+    </association>
+    <association property="patient" javaType="zwf.po.Patient"  >
+    <id column="patient_id" property="patient_id"/>
+    	<result column="patient_name" property="patient_name"/>
+    	<result column="patient_meal" property="patient_meal"/>
+    </association>
+    <association property="patient_message" javaType="zwf.po.Patient_message"  >
+    <id column="patient_message_id" property="patient_message_id"/>
+    	<result column="ruyuan_time" property="ruyuan_time"/>
+    	<result column="diagnosis_a" property="diagnosis_a"/>
+    </association>
+    <association property="deparment" javaType="zwf.po.Deparment"  >
+    <id column="deparment_id" property="deparment_id"/>
+    	<result column="deparment_name" property="deparment_name"/>
+    </association>
+    <association property="bed" javaType="zwf.po.Bed"  >
+    <id column="bed_id" property="bed_id"/>
+    	<result column="bed_name" property="bed_name"/>
+    </association>
+    <association property="user" javaType="zwf.po.User"  >
+    <id column="user_id" property="user_id"/>
+    	<result column="user_name" property="user_name"/>
+    </association>
+    <association property="medical_orders_list_action" javaType="zwf.po.Medical_Orders_List_Action"  >
+    <id column="medical_orders_list_action_id" property="medical_orders_list_action_id"/>
+    	<result column="speed" property="speed"/>
+    	<result column="ways" property="ways"/>
+    	<result column="direction" property="direction"/>
+    </association>
+   </resultMap>
+	
+	
+	<select id="printf_selectRequisition_List" resultMap="printf_selectRequisition_ListMap" parameterType="Map">
+		SELECT mola.direction,mola.speed,mola.ways,bed.bed_name,d.deparment_name,reql.*,m.*,u.*,req.*,p.*
+		FROM requisition_list reql LEFT JOIN requisition req ON reql.requisition_id = req.requisition_id
+		LEFT JOIN medicines m ON m.medicines_id = reql.medicined_id
+		LEFT JOIN user u ON u.user_work_id = reql.pharmacist
+		LEFT JOIN patient p ON p.patient_id = req.patient_id
+		LEFT JOIN patient_message pm ON p.patient_id = pm.patient_id  
+		LEFT JOIN  bed ON bed.bed_id = pm.bed_id
+		LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+		LEFT JOIN medical_orders_list_action mola ON mola.medical_orders_list_action_id = reql.medical_orders_id    
+		WHERE 1=1  
+		AND req.requisition_id = #{requisition_id}
+		AND reql.take_requisition = 1
+		ORDER BY reql.take_requisition_time	
+		<if test="null != beginNumber and null != limit">
+  		LIMIT #{beginNumber},#{limit}
+  		</if>
+	</select>
+	
+	<!--查询单个病人的开药详情  -->
+	<resultMap type="requisition_List" id="select_cancelRequisition_ListMap">
+   <id column="requisition_list_id" property="requisition_list_id"/>
+  <result column="requisition_id" property="requisition_id"/>
+  <result column="medical_orders_id" property="medical_orders_id"/>
+  <result column="medicined_id" property="medicined_id"/>
+  <result column="number" property="number"/>
+  <result column="pharmacist" property="pharmacist"/>
+  <result column="check_requisition" property="check_requisition"/>
+  <result column="take_requisition" property="take_requisition"/>
+  <result column="take_requisition_time" property="take_requisition_time"/>
+  <result column="check_requisition_time" property="check_requisition_time"/>
+   <result column="action_requisition_time" property="action_requisition_time"/>
+   <result column="requisition_status" property="requisition_status"/>
+   <result column="check_return_requisition_time" property="check_return_requisition_time"/>
+   <result column="action_return_requisition_time" property="action_return_requisition_time"/>
+   <result column="return_pharmacist" property="return_pharmacist"/>
+   <association property="requisition" javaType="zwf.po.Requisition"  >
+   	<id column="requisition_id" property="requisition_id"/>
+   	<result column="start_time" property="start_time"/>
+   	<result column="nurse_id" property="nurse_id"/>
+   	<result column="check_state" property="check_state"/>
+   </association>
+    <association property="medicines" javaType="zwf.po.Medicines"  >
+    <id column="medicines_id" property="medicines_id"/>
+    	<result column="medicines_name" property="medicines_name"/>
+    	<result column="medicines_form" property="medicines_form"/>
+    	<result column="medicines_specification" property="medicines_specification"/>
+    	<result column="medicines_number" property="medicines_number"/>
+    	<result column="medicines_unit" property="medicines_unit"/>
+    	<result column="medicines_price" property="medicines_price"/>
+    	<result column="condition" property="condition"/>
+    </association>
+    <association property="patient" javaType="zwf.po.Patient"  >
+    <id column="patient_id" property="patient_id"/>
+    	<result column="patient_name" property="patient_name"/>
+    	<result column="patient_meal" property="patient_meal"/>
+    </association>
+    <association property="patient_message" javaType="zwf.po.Patient_message"  >
+    <id column="patient_message_id" property="patient_message_id"/>
+    	<result column="ruyuan_time" property="ruyuan_time"/>
+    	<result column="diagnosis_a" property="diagnosis_a"/>
+    </association>
+    <association property="deparment" javaType="zwf.po.Deparment"  >
+    <id column="deparment_id" property="deparment_id"/>
+    	<result column="deparment_name" property="deparment_name"/>
+    </association>
+    <association property="bed" javaType="zwf.po.Bed"  >
+    <id column="bed_id" property="bed_id"/>
+    	<result column="bed_name" property="bed_name"/>
+    </association>
+    <association property="user" javaType="zwf.po.User"  >
+    <id column="user_id" property="user_id"/>
+    	<result column="user_name" property="user_name"/>
+    </association>
+    <association property="user1" javaType="zwf.po.User"  >
+    <id column="user_id1" property="user_id"/>
+    	<result column="user_name1" property="user_name"/>
+    </association>
+    <association property="medical_orders_list_action" javaType="zwf.po.Medical_Orders_List_Action"  >
+    <id column="medical_orders_list_action_id" property="medical_orders_list_action_id"/>
+    	<result column="speed" property="speed"/>
+    	<result column="ways" property="ways"/>
+    	<result column="direction" property="direction"/>
+    </association>
+   </resultMap>
+	
+	
+	<select id="select_cancelRequisition_List" resultMap="select_cancelRequisition_ListMap" parameterType="Map">
+		SELECT mola.direction,mola.speed,mola.ways,bed.bed_name,d.deparment_name,reql.*,m.*,u.*,req.*,p.*,u1.user_name as user_name1
+		FROM requisition_list reql LEFT JOIN requisition req ON reql.requisition_id = req.requisition_id
+		LEFT JOIN medicines m ON m.medicines_id = reql.medicined_id
+		LEFT JOIN user u ON u.user_work_id = reql.pharmacist
+		LEFT JOIN user u1 ON u1.user_work_id = reql.return_pharmacist
+		LEFT JOIN patient p ON p.patient_id = req.patient_id
+		LEFT JOIN patient_message pm ON p.patient_id = pm.patient_id  
+		LEFT JOIN  bed ON bed.bed_id = pm.bed_id
+		LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+		LEFT JOIN medical_orders_list_action mola ON mola.medical_orders_list_action_id = reql.medical_orders_id    
+		WHERE 1=1  
+		AND req.requisition_id = #{requisition_id}
+		AND reql.take_requisition = 1
+		ORDER BY reql.take_requisition_time	
+		<if test="null != beginNumber and null != limit">
+  		LIMIT #{beginNumber},#{limit}
+  		</if>
+	</select>
+	
+	<select id="getCount_cancelRequisition_List" resultType="int">
+  		SELECT COUNT(1) 
+  		FROM requisition_list reql LEFT JOIN requisition req ON reql.requisition_id = req.requisition_id
+		LEFT JOIN medicines m ON m.medicines_id = reql.medicined_id
+		LEFT JOIN user u ON u.user_work_id = reql.pharmacist
+		LEFT JOIN patient p ON p.patient_id = req.patient_id 
+		WHERE 1=1 
+		AND req.requisition_id = #{requisition_id}
+		AND reql.take_requisition = 1
+		ORDER BY reql.take_requisition_time
+		
+   </select>
+   
+    <!--药品退药校对  -->
+	<update id="update_cancelRequisition_List" parameterType="requisition_List">
+	update requisition_list,medicines
+	<set>
+	 <if test="check_return_requisition_time!=null">
+	 	check_return_requisition_time=#{check_return_requisition_time},
+	 </if>	 
+	 <if test="return_pharmacist!=null">
+	 	return_pharmacist=#{return_pharmacist},
+	 </if>
+	 
+	 
+	 requisition_status = 3,
+	 
+	 medicines.medicines_number = medicines.medicines_number + requisition_list.sum_number,
+	</set>
+	where  requisition_status = 2 
+	AND requisition_list.medicined_id = medicines.medicines_id 
+	<!-- AND requisition_list.sum_number &lt;= medicines.medicines_number -->
+	AND requisition_list_id in (${select_id})
+	</update>
+	
+	<!--取消校对  -->
+	<update id="cancel_cancelRequisition_List" parameterType="requisition_List">
+	update requisition_list,medicines
+	<set>	 
+	 	check_return_requisition_time=NULL,	
+	 
+		medicines.medicines_number = medicines.medicines_number - requisition_list.sum_number,
+	 	return_pharmacist=NULL,
+	 	requisition_status = 2,
+	</set>
+	where  requisition_status = 3 
+	AND requisition_list.medicined_id = medicines.medicines_id
+	and requisition_list_id in (${select_id})
+	</update>
+	
+	<!--退药  -->
+	<update id="action_cancelRequisition_List" parameterType="requisition_List">
+	update requisition_list
+	<set>		
+	 <if test="action_return_requisition_time!=null">
+	 	action_return_requisition_time=#{action_return_requisition_time},
+	 </if>
+	 requisition_status = 4,
+	</set>
+	where  requisition_status = 3 and requisition_list_id in (${select_id})
+	</update>
+	
+</mapper>

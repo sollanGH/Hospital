@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="
+       http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans-4.3.xsd
+       http://www.springframework.org/schema/context
+       http://www.springframework.org/schema/context/spring-context-4.3.xsd
+       http://www.springframework.org/schema/mvc
+       http://www.springframework.org/schema/mvc/spring-mvc-4.3.xsd">
+    <!--加载注解驱动   -->   
+    <mvc:annotation-driven />
+    <!--配置静态资源的访问映射，此配置的文件，将不被前端控制器拦截  -->
+     <mvc:resources location="/WEB-INF/css/" mapping="/css/**" />
+     <mvc:resources location="/WEB-INF/fonts/" mapping="/fonts/**" />
+     <mvc:resources location="/WEB-INF/img/" mapping="/img/**" />
+     <mvc:resources location="/WEB-INF/js/" mapping="/js/**" />
+     <mvc:resources location="/WEB-INF/plugins/" mapping="/plugins/**" />
+      <mvc:interceptors>
+        <mvc:interceptor>
+            <mvc:mapping path="/**" />
+            <mvc:exclude-mapping path="/**/fonts/*"/>
+        	<mvc:exclude-mapping path="/**/*.css"/>
+        	<mvc:exclude-mapping path="/**/*.js"/>
+         	<mvc:exclude-mapping path="/**/*.png"/>
+        	<mvc:exclude-mapping path="/**/*.gif"/>
+        	<mvc:exclude-mapping path="/**/*.jpg"/>
+            <bean class="zwf.interceptor.UserInterceptor" />
+        </mvc:interceptor>
+    </mvc:interceptors>   
+    <!--配置包扫描器，扫描@Controller注解的   -->
+	<context:component-scan base-package="zwf.controller" />
+	<!--配置视图解析器  -->
+	<bean id="viewResolver"
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="prefix" value="/WEB-INF/jsp/" />
+		<property name="suffix" value=".jsp" />
+	</bean>
+	<!--配置文件上传解析器  -->
+	 <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+		<!-- 设定默认编码 -->
+		<property name="defaultEncoding" value="UTF-8"></property>
+		<!-- 设定文件上传的最大值50MB，50*1024*1024 -->
+		<property name="maxUploadSize" value="52428800"></property>
+	</bean> 
+	
+	
+	
+</beans>

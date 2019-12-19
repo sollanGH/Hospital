@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="zwf.dao.RoomDao">
+
+	
+	
+	<!--添加  -->
+	<insert id="addRoom" parameterType="room">
+	insert into room(room_name,deparment_id,bed_num,principal,ruyuan_num,chuyuan_num,empty_beds,duty_officers_id)
+	values(#{room_name},#{deparment_id},#{bed_num},#{principal},#{ruyuan_num},#{chuyuan_num},#{empty_beds},#{duty_officers_id})
+	</insert>
+	
+	<!--更新  -->
+	<update id="updateRoom" parameterType="room">
+	update room
+	<set>
+	 <if test="room_id!=null">
+	 	room_name=${room_name},
+	 </if>
+	 <if test="deparment_id!=null and deparment_id > 0">
+	 	deparment_id=${deparment_id},
+	 </if>
+	 <if test="bed_num!=null">
+	 	bed_num=${bed_num},
+	 </if>
+	 <if test="principal!=null and principal!='' ">
+	 	principal=${principal},
+	 </if>
+	 <if test="ruyuan_num!=null">
+	 	ruyuan_num=${ruyuan_num},
+	 </if>
+	 <if test="chuyuan_num!=null">
+	 	chuyuan_num=${chuyuan_num},
+	 </if>
+	 <if test="empty_beds!=null">
+	 	empty_beds=${empty_beds},
+	 </if>
+	 <if test="duty_officers_id!=null and duty_officers_id!=''">
+	 	duty_officers_id=${duty_officers_id},
+	 </if>
+	</set>
+	where room_id=${room_id}
+	</update>
+	
+	<!--查询  -->
+	
+	
+	<!--普通查询  -->
+	<select id="selectAllRoom" resultType="room" parameterType="Map">
+		SELECT r.*,d.deparment_name,COUNT(b.bed_id) as bed_num,
+		sum(CASE b.bed_state WHEN '1' THEN 1 ELSE 0 END)as empty_beds
+		FROM room r
+		LEFT JOIN bed b ON r.room_id = b.room_id  LEFT JOIN deparment d 
+		ON d.deparment_id = r.deparment_id 
+		WHERE 1=1
+			<if test="room_name!=null and room_name!=''"> AND r.room_name like CONCAT('%','${room_name}','%')</if>
+			<if test="deparment_id!=null and deparment_id!=''and deparment_id > 0 ">AND  d.deparment_id = ${deparment_id}</if> 
+		
+		GROUP  BY r.room_id
+		<if test="null != beginNumber and null != limit">
+  		LIMIT #{beginNumber},#{limit}
+  		</if>
+	</select>
+	<!--下拉框显示全部  -->
+	<select id="selectAllRoomid" resultType="room" parameterType="Map">
+		SELECT room_id,room_name,deparment_id
+		FROM room
+		where deparment_id=#{deparment_id}
+	</select>
+	
+	<select id="getCountRoomid" resultType="int">
+  		SELECT COUNT(1) 
+  		FROM room 
+  		where deparment_id=#{deparment_id}
+   </select>
+	
+	<!--下拉框显示可用的  -->
+	<select id="selectUseRoomid" resultType="room" parameterType="Map">
+		SELECT a.room_id,a.room_name,a.deparment_id,a.empty_beds 
+		FROM (SELECT r.room_name,r.room_id,d.deparment_id,
+		sum(CASE b.bed_state WHEN '1' THEN 1 ELSE 0 END)as empty_beds
+		FROM room r
+		LEFT JOIN bed b ON r.room_id = b.room_id  LEFT JOIN deparment d 
+		ON d.deparment_id = r.deparment_id 
+		WHERE 1=1
+		GROUP  BY r.room_id) a
+		where empty_beds > 0 
+		AND deparment_id=#{deparment_id}
+		ORDER BY room_id
+	</select>
+	
+	<select id="getCountUseRoomid" resultType="int">
+  		SELECT COUNT(1) 
+  		FROM (SELECT r.room_name,r.room_id,d.deparment_id,
+		sum(CASE b.bed_state WHEN '1' THEN 1 ELSE 0 END)as empty_beds
+		FROM room r
+		LEFT JOIN bed b ON r.room_id = b.room_id  LEFT JOIN deparment d 
+		ON d.deparment_id = r.deparment_id 
+		WHERE 1=1
+		GROUP  BY r.room_id) a
+		where empty_beds > 0 
+  		AND deparment_id=#{deparment_id}
+   </select>
+	
+	
+	
+	
+	<!--查询总数  -->
+	<select id="getCountRoom" resultType="int">
+  		SELECT COUNT(1) 
+  		FROM room r,deparment d
+		where r.deparment_id = d.deparment_id 
+  		 
+		<if test="room_name!=null and room_name!=''">AND r.room_name like CONCAT('%','${room_name}','%')</if>
+		<if test="deparment_id!=null and deparment_id!=''and deparment_id > 0 ">AND  d.deparment_id = ${deparment_id}</if> 
+		
+   </select>
+   
+   <delete id="deleteRoom" parameterType="String">
+		delete from room where room_id in (${room_id})
+	</delete>
+   
+</mapper>

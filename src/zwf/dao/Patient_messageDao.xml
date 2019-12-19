@@ -1,0 +1,804 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="zwf.dao.Patient_messageDao">
+
+	
+	
+	<!--添加  -->
+	<insert id="addPatient_message" parameterType="Patient_message">
+	insert into patient_message(patient_id,case_id,deparment_id,room_id,bed_id,ruyuan_time,ruyuan_state,transfer_state,churuan_room,diagnosis_a,diagnosis_b,doctor_id,company_name,company_bed_id,nurse_level)
+	values(#{patient_id},#{case_id},#{deparment_id},#{room_id},#{bed_id},#{ruyuan_time},#{ruyuan_state},#{transfer_state},#{churuan_room},#{diagnosis_a},#{diagnosis_b},#{doctor_id},#{company_name},#{company_bed_id},#{nurse_level})
+	</insert>
+	
+	
+	<!--全部一对一  -->
+   <resultMap type="Patient_message" id="patient_messageMap">
+   <id column="patient_message_id" property="patient_message_id"/>
+  <result column="deparment_id" property="deparment_id"/>
+  <result column="room_id" property="room_id"/>
+  <result column="bed_id" property="bed_id"/>
+  <result column="ruyuan_time" property="ruyuan_time"/>
+  <result column="ruyuan_state" property="ruyuan_state"/>
+  <result column="case_id" property="case_id"/>
+  <result column="transfer_state" property="transfer_state"/>
+  <result column="diagnosis_a" property="diagnosis_a"/>
+  <result column="doctor_id" property="doctor_id"/>
+  <result column="nurse_level" property="nurse_level"/>
+  <result column="sum_advance_payment" property="sum_advance_payment"/>
+  <result column="sum_price" property="sum_price"/>
+  <result column="after_expenses" property="after_expenses"/>        
+   <association property="patient" javaType="zwf.po.Patient"  >
+   	<id column="patient_id" property="patient_id"/>
+   	<result column="brith_day" property="brith_day"/>
+   	<result column="patient_name" property="patient_name"/>
+    <result column="marital_state" property="marital_state"/>
+    <result column="patient_meal" property="patient_meal"/>
+    <result column="brith_place" property="brith_place"/>
+    <result column="id_number" property="id_number"/>
+    <result column="phone" property="phone"/>
+    <result column="age" property="age"/>
+    <result column="apatient_name" property="apatient_name"/>
+    <result column="aphone" property="aphone"/>
+    <result column="relation" property="relation"/>
+     <result column="insurance" property="insurance"/>
+   </association>
+    <association property="deparment" javaType="zwf.po.Deparment"  >
+    <id column="deparment_id" property="deparment_id"/>
+    	<result column="deparment_name" property="deparment_name"/>
+    </association>
+    <association property="room" javaType="zwf.po.Room"  >
+    <id column="room_id" property="room_id"/>
+    	<result column="room_name" property="room_name"/>
+    </association>
+    <association property="bed" javaType="zwf.po.Bed"  >
+    <id column="bed_id" property="bed_id"/>
+    	<result column="bed_name" property="bed_name"/>
+    </association>
+     <association property="user" javaType="zwf.po.User"  >
+    <id column="user_id" property="user_id"/>
+    	<result column="user_name" property="user_name"/>
+    </association>
+    <association property="payment" javaType="zwf.po.Payment"  >
+    <id column="payment_id" property="payment_id"/>
+    	<result column="operating_expenses" property="operating_expenses"/>
+    	<result column="refunds" property="refunds"/>
+    	<result column="advance_payment" property="advance_payment"/>
+    	<result column="advance_payment_time" property="advance_payment_time"/>
+    	<result column="payee" property="payee"/>
+    	<result column="supplementary_payment" property="supplementary_payment"/>
+    	<result column="drug_costs" property="drug_costs"/>
+    	<result column="survey_fee" property="survey_fee"/>
+    	<result column="settle_accounts" property="settle_accounts"/>
+    	<result column="settle_accounts_time" property="settle_accounts_time"/>
+		<result column="payment_status" property="payment_status"/>    
+    </association>
+   </resultMap>
+   <!--普通查询  -->
+	<select id="selectAllPatient_message" resultMap="patient_messageMap" parameterType="Map">
+	SELECT u.user_name,p.*,pm.*,d.*,r.*,bed.*,pay.*,SUM(pay.advance_payment) AS sum_advance_payment,
+	SUM(pay.sum_expenses) AS sum_price,SUM(pay.advance_payment) - SUM(pay.sum_expenses) AS after_expenses
+	FROM patient p LEFT JOIN patient_message pm ON p.patient_id = pm.patient_id LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+	LEFT JOIN room r ON r.room_id = pm.room_id LEFT JOIN  bed ON bed.bed_id = pm.bed_id LEFT JOIN `user` u ON pm.doctor_id = u.user_work_id
+	LEFT JOIN payment pay ON  p.patient_id = pay.patient_id
+	WHERE 1=1
+		<if test="patient_id!=null and patient_id!=''">AND p.patient_id like CONCAT('%','${patient_id}','%')</if>
+		<if test="patient_name!=null and patient_name!=''">AND p.patient_name like CONCAT('%','${patient_name}','%')</if>
+		<if test="start_ruyuan_time!=null and end_ruyuan_time!=null ">AND pm.ruyuan_time BETWEEN '${start_ruyuan_time}' AND '${end_ruyuan_time}'</if>
+	AND pm.churuan_time is  null
+	GROUP BY p.patient_id
+	ORDER BY pm.ruyuan_time DESC	
+		<if test="null != beginNumber and null != limit">
+  		LIMIT #{beginNumber},#{limit}
+  		</if>
+  		
+	</select>
+
+	<!--查询总数  -->
+	<select id="getCountPatient_message" resultType="int">
+	<!-- SELECT COUNT(1) 
+	FROM patient p LEFT JOIN patient_message pm ON p.patient_id = pm.patient_id LEFT JOIN room r ON r.room_id = pm.room_id  
+	LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id LEFT JOIN  bed ON bed.bed_id = pm.bed_id -->
+	SELECT COUNT(1)
+	FROM(
+	SELECT  COUNT(1)
+		FROM patient p LEFT JOIN patient_message pm ON p.patient_id = pm.patient_id LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+		LEFT JOIN room r ON r.room_id = pm.room_id LEFT JOIN  bed ON bed.bed_id = pm.bed_id LEFT JOIN `user` u ON pm.doctor_id = u.user_work_id
+		LEFT JOIN payment pay ON  p.patient_id = pay.patient_id
+		WHERE 1=1
+		AND pm.churuan_time is  null
+			<if test="patient_id!=null and patient_id!=''">AND p.patient_id like CONCAT('%','${patient_id}','%')</if>
+			<if test="patient_name!=null and patient_name!=''">AND p.patient_name like CONCAT('%','${patient_name}','%')</if>
+			<if test="start_ruyuan_time!=null and end_ruyuan_time!=null ">AND pm.ruyuan_time BETWEEN '${start_ruyuan_time}' AND '${end_ruyuan_time}'</if>
+		GROUP BY p.patient_id
+		ORDER BY pm.ruyuan_time DESC)M
+		
+		
+   </select>
+   
+   <!--可用一对一  -->
+   <resultMap type="Patient_message" id="selectAll_UsePatient_messageMap">
+   <id column="patient_message_id" property="patient_message_id"/>
+  <result column="deparment_id" property="deparment_id"/>
+  <result column="room_id" property="room_id"/>
+  <result column="bed_id" property="bed_id"/>
+  <result column="ruyuan_time" property="ruyuan_time"/>
+  <result column="ruyuan_state" property="ruyuan_state"/>
+  <result column="case_id" property="case_id"/>
+  <result column="transfer_state" property="transfer_state"/>
+  <result column="diagnosis_a" property="diagnosis_a"/>
+  <result column="doctor_id" property="doctor_id"/>
+  <result column="nurse_level" property="nurse_level"/>
+  <result column="sum_advance_payment" property="sum_advance_payment"/>
+  <result column="sum_price" property="sum_price"/>
+  <result column="after_expenses" property="after_expenses"/>   
+   <association property="patient" javaType="zwf.po.Patient"  >
+   	<id column="patient_id" property="patient_id"/>
+   	<result column="brith_day" property="brith_day"/>
+   	<result column="patient_name" property="patient_name"/>
+    <result column="marital_state" property="marital_state"/>
+    <result column="patient_meal" property="patient_meal"/>
+    <result column="brith_place" property="brith_place"/>
+    <result column="id_number" property="id_number"/>
+    <result column="phone" property="phone"/>
+    <result column="age" property="age"/>
+    <result column="apatient_name" property="apatient_name"/>
+    <result column="aphone" property="aphone"/>
+    <result column="relation" property="relation"/>
+     <result column="insurance" property="insurance"/>
+   </association>
+    <association property="deparment" javaType="zwf.po.Deparment"  >
+    <id column="deparment_id" property="deparment_id"/>
+    	<result column="deparment_name" property="deparment_name"/>
+    </association>
+    <association property="room" javaType="zwf.po.Room"  >
+    <id column="room_id" property="room_id"/>
+    	<result column="room_name" property="room_name"/>
+    </association>
+    <association property="bed" javaType="zwf.po.Bed"  >
+    <id column="bed_id" property="bed_id"/>
+    	<result column="bed_name" property="bed_name"/>
+    </association>
+     <association property="user" javaType="zwf.po.User"  >
+    <id column="user_id" property="user_id"/>
+    	<result column="user_name" property="user_name"/>
+    </association>
+    <association property="payment" javaType="zwf.po.Payment"  >
+    <id column="payment_id" property="payment_id"/>
+    	<result column="operating_expenses" property="operating_expenses"/>
+    	<result column="refunds" property="refunds"/>
+    	<result column="advance_payment" property="advance_payment"/>
+    	<result column="advance_payment_time" property="advance_payment_time"/>
+    	<result column="payee" property="payee"/>
+    	<result column="supplementary_payment" property="supplementary_payment"/>
+    	<result column="drug_costs" property="drug_costs"/>
+    	<result column="survey_fee" property="survey_fee"/>
+    	<result column="settle_accounts" property="settle_accounts"/>
+    	<result column="settle_accounts_time" property="settle_accounts_time"/>
+		<result column="payment_status" property="payment_status"/>    
+    </association>
+   </resultMap>
+   <!--普通查询  -->
+	<select id="selectAll_UsePatient_message" resultMap="selectAll_UsePatient_messageMap" parameterType="Map">
+	SELECT u.user_name,p.*,pm.*,d.*,r.*,bed.*,pay.*,SUM(pay.advance_payment) AS sum_advance_payment,
+	SUM(pay.sum_expenses) AS sum_price,SUM(pay.advance_payment) - SUM(pay.sum_expenses) AS after_expenses
+	FROM patient p LEFT JOIN patient_message pm ON p.patient_id = pm.patient_id LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+	LEFT JOIN room r ON r.room_id = pm.room_id LEFT JOIN  bed ON bed.bed_id = pm.bed_id LEFT JOIN `user` u ON pm.doctor_id = u.user_work_id
+	LEFT JOIN payment pay ON  p.patient_id = pay.patient_id
+	WHERE 1=1
+	AND EXISTS (SELECT * FROM  patient_message WHERE patient_message.patient_id = p.patient_id)
+		<if test="patient_id!=null and patient_id!=''">AND p.patient_id like CONCAT('%','${patient_id}','%')</if>
+		<if test="select_deparment_id!=null and select_deparment_id!=''">AND pm.deparment_id = #{select_deparment_id}</if>
+		<if test="patient_name!=null and patient_name!=''">AND p.patient_name like CONCAT('%','${patient_name}','%')</if>
+		<if test="start_ruyuan_time!=null and end_ruyuan_time!=null ">AND pm.ruyuan_time BETWEEN '${start_ruyuan_time}' AND '${end_ruyuan_time}'</if>
+	GROUP BY p.patient_id
+	ORDER BY pm.ruyuan_time DESC	
+		<if test="null != beginNumber and null != limit">
+  		LIMIT #{beginNumber},#{limit}
+  		</if>
+  		
+	</select>
+
+	<!--查询总数  -->
+	<select id="getCount_UsePatient_message" resultType="int">
+	<!-- SELECT COUNT(1) 
+	FROM patient p LEFT JOIN patient_message pm ON p.patient_id = pm.patient_id LEFT JOIN room r ON r.room_id = pm.room_id  
+	LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id LEFT JOIN  bed ON bed.bed_id = pm.bed_id -->
+	SELECT COUNT(1)
+	FROM(
+	SELECT  COUNT(1)
+		FROM patient p LEFT JOIN patient_message pm ON p.patient_id = pm.patient_id LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+		LEFT JOIN room r ON r.room_id = pm.room_id LEFT JOIN  bed ON bed.bed_id = pm.bed_id LEFT JOIN `user` u ON pm.doctor_id = u.user_work_id
+		LEFT JOIN payment pay ON  p.patient_id = pay.patient_id
+		WHERE 1=1
+		AND EXISTS (SELECT * FROM  patient_message WHERE patient_message.patient_id = p.patient_id)
+			<if test="patient_id!=null and patient_id!=''">AND p.patient_id like CONCAT('%','${patient_id}','%')</if>
+			<if test="select_deparment_id!=null and select_deparment_id!=''">AND pm.deparment_id = #{select_deparment_id}</if>
+			<if test="patient_name!=null and patient_name!=''">AND p.patient_name like CONCAT('%','${patient_name}','%')</if>
+			<if test="start_ruyuan_time!=null and end_ruyuan_time!=null ">AND pm.ruyuan_time BETWEEN '${start_ruyuan_time}' AND '${end_ruyuan_time}'</if>
+		GROUP BY p.patient_id
+		ORDER BY pm.ruyuan_time DESC)M		
+   </select>
+   
+   <!--病人费用一对一  -->
+   <resultMap type="Patient_message" id="selectAll_Payment_Patient_messageMap">
+   <id column="patient_message_id" property="patient_message_id"/>
+  <result column="deparment_id" property="deparment_id"/>
+  <result column="room_id" property="room_id"/>
+  <result column="bed_id" property="bed_id"/>
+  <result column="ruyuan_time" property="ruyuan_time"/>
+  <result column="ruyuan_state" property="ruyuan_state"/>
+  <result column="case_id" property="case_id"/>
+  <result column="transfer_state" property="transfer_state"/>
+  <result column="diagnosis_a" property="diagnosis_a"/>
+  <result column="doctor_id" property="doctor_id"/>
+  <result column="nurse_level" property="nurse_level"/>
+  <result column="sum_advance_payment" property="sum_advance_payment"/>
+  <result column="sum_price" property="sum_price"/>
+  <result column="after_expenses" property="after_expenses"/>   
+   <association property="patient" javaType="zwf.po.Patient"  >
+   	<id column="patient_id" property="patient_id"/>
+   	<result column="brith_day" property="brith_day"/>
+   	<result column="patient_name" property="patient_name"/>
+    <result column="marital_state" property="marital_state"/>
+    <result column="patient_meal" property="patient_meal"/>
+    <result column="brith_place" property="brith_place"/>
+    <result column="id_number" property="id_number"/>
+    <result column="phone" property="phone"/>
+    <result column="age" property="age"/>
+    <result column="apatient_name" property="apatient_name"/>
+    <result column="aphone" property="aphone"/>
+    <result column="relation" property="relation"/>
+     <result column="insurance" property="insurance"/>
+   </association>
+    <association property="deparment" javaType="zwf.po.Deparment"  >
+    <id column="deparment_id" property="deparment_id"/>
+    	<result column="deparment_name" property="deparment_name"/>
+    </association>
+    <association property="room" javaType="zwf.po.Room"  >
+    <id column="room_id" property="room_id"/>
+    	<result column="room_name" property="room_name"/>
+    </association>
+    <association property="bed" javaType="zwf.po.Bed"  >
+    <id column="bed_id" property="bed_id"/>
+    	<result column="bed_name" property="bed_name"/>
+    </association>
+     <association property="user" javaType="zwf.po.User"  >
+    <id column="user_id" property="user_id"/>
+    	<result column="user_name" property="user_name"/>
+    </association>
+    <association property="payment" javaType="zwf.po.Payment"  >
+    <id column="payment_id" property="payment_id"/>
+    	<result column="operating_expenses" property="operating_expenses"/>
+    	<result column="refunds" property="refunds"/>
+    	<result column="advance_payment" property="advance_payment"/>
+    	<result column="advance_payment_time" property="advance_payment_time"/>
+    	<result column="payee" property="payee"/>
+    	<result column="supplementary_payment" property="supplementary_payment"/>
+    	<result column="drug_costs" property="drug_costs"/>
+    	<result column="survey_fee" property="survey_fee"/>
+    	<result column="settle_accounts" property="settle_accounts"/>
+    	<result column="settle_accounts_time" property="settle_accounts_time"/>
+		<result column="payment_status" property="payment_status"/>    
+    </association>
+   </resultMap>
+   <!--普通查询  -->
+	<select id="selectAll_Payment_Patient_message" resultMap="selectAll_Payment_Patient_messageMap" parameterType="Map">
+	SELECT u.user_name,p.*,pm.*,d.*,r.*,bed.*,pay.*,SUM(pay.advance_payment) AS sum_advance_payment,
+	SUM(pay.sum_expenses) AS sum_price,SUM(pay.advance_payment) - SUM(pay.sum_expenses) AS after_expenses
+	FROM patient p LEFT JOIN patient_message pm ON p.patient_id = pm.patient_id LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+	LEFT JOIN room r ON r.room_id = pm.room_id LEFT JOIN  bed ON bed.bed_id = pm.bed_id LEFT JOIN `user` u ON pm.doctor_id = u.user_work_id
+	LEFT JOIN payment pay ON  (p.patient_id = pay.patient_id AND pay.payment_status = 0)
+	WHERE 1=1
+	AND pay.advance_payment IS NOT NULL
+		<if test="patient_id!=null and patient_id!=''">AND p.patient_id like CONCAT('%','${patient_id}','%')</if>
+		<if test="select_deparment_id!=null and select_deparment_id!=''">AND pm.deparment_id = #{select_deparment_id}</if>
+		<if test="patient_name!=null and patient_name!=''">AND p.patient_name like CONCAT('%','${patient_name}','%')</if>
+		<if test="start_ruyuan_time!=null and end_ruyuan_time!=null ">AND pm.ruyuan_time BETWEEN '${start_ruyuan_time}' AND '${end_ruyuan_time}'</if>
+	GROUP BY p.patient_id
+	ORDER BY pm.ruyuan_time DESC	
+		<if test="null != beginNumber and null != limit">
+  		LIMIT #{beginNumber},#{limit}
+  		</if>
+  		
+	</select>
+
+	<!--查询总数  -->
+	<select id="getCount_Payment_Patient_message" resultType="int">	
+	SELECT COUNT(1)
+	FROM(
+	SELECT  COUNT(1)
+		FROM patient p LEFT JOIN patient_message pm ON p.patient_id = pm.patient_id LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+		LEFT JOIN room r ON r.room_id = pm.room_id LEFT JOIN  bed ON bed.bed_id = pm.bed_id LEFT JOIN `user` u ON pm.doctor_id = u.user_work_id
+		LEFT JOIN payment pay ON  p.patient_id = pay.patient_id
+		WHERE 1=1
+		AND pay.advance_payment IS NOT NULL
+			<if test="select_deparment_id!=null and select_deparment_id!=''">AND pm.deparment_id = #{select_deparment_id}</if>
+			<if test="patient_id!=null and patient_id!=''">AND p.patient_id like CONCAT('%','${patient_id}','%')</if>
+			<if test="patient_name!=null and patient_name!=''">AND p.patient_name like CONCAT('%','${patient_name}','%')</if>
+			<if test="start_ruyuan_time!=null and end_ruyuan_time!=null ">AND pm.ruyuan_time BETWEEN '${start_ruyuan_time}' AND '${end_ruyuan_time}'</if>
+		GROUP BY p.patient_id
+		ORDER BY pm.ruyuan_time DESC)M		
+   </select>
+   
+   
+   
+   <!--更新  -->
+	<update id="updatePatient_message" parameterType="patient_message">
+	update patient_message
+	<set>	 
+	 <if test="bed_id!=null">
+	 	bed_id=#{bed_id},
+	 </if>
+	 <if test="doctor_id!=null">
+	 	doctor_id=#{doctor_id},
+	 </if>
+	 <if test="room_id !=null">
+	 	room_id=#{room_id},
+	 </if>
+	 <if test="deparment_id !=null">
+	 	deparment_id=#{deparment_id},
+	 </if>
+	</set>
+	where case_id=#{case_id}
+	</update>
+	
+	<!--可用一对一 医生 -->
+   <resultMap type="Patient_message" id="selectAll_UsePatient_message_doctorMap">
+   <id column="patient_message_id" property="patient_message_id"/>
+  <result column="deparment_id" property="deparment_id"/>
+  <result column="room_id" property="room_id"/>
+  <result column="bed_id" property="bed_id"/>
+  <result column="ruyuan_time" property="ruyuan_time"/>
+  <result column="ruyuan_state" property="ruyuan_state"/>
+  <result column="case_id" property="case_id"/>
+  <result column="transfer_state" property="transfer_state"/>
+  <result column="diagnosis_a" property="diagnosis_a"/>
+  <result column="doctor_id" property="doctor_id"/>
+  <result column="nurse_level" property="nurse_level"/>
+  <result column="sum_advance_payment" property="sum_advance_payment"/>
+  <result column="sum_price" property="sum_price"/>
+  <result column="after_expenses" property="after_expenses"/>   
+   <association property="patient" javaType="zwf.po.Patient"  >
+   	<id column="patient_id" property="patient_id"/>
+   	<result column="brith_day" property="brith_day"/>
+   	<result column="patient_name" property="patient_name"/>
+    <result column="marital_state" property="marital_state"/>
+    <result column="patient_meal" property="patient_meal"/>
+    <result column="brith_place" property="brith_place"/>
+    <result column="id_number" property="id_number"/>
+    <result column="phone" property="phone"/>
+    <result column="age" property="age"/>
+    <result column="apatient_name" property="apatient_name"/>
+    <result column="aphone" property="aphone"/>
+    <result column="relation" property="relation"/>
+     <result column="insurance" property="insurance"/>
+   </association>
+    <association property="deparment" javaType="zwf.po.Deparment"  >
+    <id column="deparment_id" property="deparment_id"/>
+    	<result column="deparment_name" property="deparment_name"/>
+    </association>
+    <association property="room" javaType="zwf.po.Room"  >
+    <id column="room_id" property="room_id"/>
+    	<result column="room_name" property="room_name"/>
+    </association>
+    <association property="bed" javaType="zwf.po.Bed"  >
+    <id column="bed_id" property="bed_id"/>
+    	<result column="bed_name" property="bed_name"/>
+    </association>
+     <association property="user" javaType="zwf.po.User"  >
+    <id column="user_id" property="user_id"/>
+    	<result column="user_name" property="user_name"/>
+    </association>
+    <association property="payment" javaType="zwf.po.Payment"  >
+    <id column="payment_id" property="payment_id"/>
+    	<result column="operating_expenses" property="operating_expenses"/>
+    	<result column="refunds" property="refunds"/>
+    	<result column="advance_payment" property="advance_payment"/>
+    	<result column="advance_payment_time" property="advance_payment_time"/>
+    	<result column="payee" property="payee"/>
+    	<result column="supplementary_payment" property="supplementary_payment"/>
+    	<result column="drug_costs" property="drug_costs"/>
+    	<result column="survey_fee" property="survey_fee"/>
+    	<result column="settle_accounts" property="settle_accounts"/>
+    	<result column="settle_accounts_time" property="settle_accounts_time"/>
+		<result column="payment_status" property="payment_status"/>    
+    </association>
+   </resultMap>
+   <!--普通查询  -->
+	<select id="selectAll_UsePatient_message_doctor" resultMap="selectAll_UsePatient_message_doctorMap" parameterType="Map">
+	SELECT u.user_name,p.*,pm.*,d.*,r.*,bed.*,pay.*,SUM(pay.advance_payment) AS sum_advance_payment,
+	SUM(pay.sum_expenses) AS sum_price,SUM(pay.advance_payment) - SUM(pay.sum_expenses) AS after_expenses
+	FROM patient p LEFT JOIN patient_message pm ON p.patient_id = pm.patient_id LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+	LEFT JOIN room r ON r.room_id = pm.room_id LEFT JOIN  bed ON bed.bed_id = pm.bed_id LEFT JOIN `user` u ON pm.doctor_id = u.user_work_id
+	LEFT JOIN payment pay ON  p.patient_id = pay.patient_id
+	WHERE 1=1
+	AND pm.churuan_time is  null
+	AND EXISTS (SELECT * FROM  patient_message WHERE patient_message.patient_id = p.patient_id)
+		<if test="patient_id!=null and patient_id!=''">AND p.patient_id like CONCAT('%','${patient_id}','%')</if>
+		<if test="select_deparment_id!=null and select_deparment_id!=''">AND pm.deparment_id = #{select_deparment_id}</if>
+		<if test="patient_name!=null and patient_name!=''">AND p.patient_name like CONCAT('%','${patient_name}','%')</if>
+		<if test="start_ruyuan_time!=null and end_ruyuan_time!=null ">AND pm.ruyuan_time BETWEEN '${start_ruyuan_time}' AND '${end_ruyuan_time}'</if>
+		<if test="role_id!=1">AND pm.doctor_id = #{doctor_id}	</if>
+		
+		
+	GROUP BY p.patient_id
+	ORDER BY pm.ruyuan_time DESC	
+		<if test="null != beginNumber and null != limit">
+  		LIMIT #{beginNumber},#{limit}
+  		</if>
+  		
+	</select>
+
+	<!--查询总数  -->
+	<select id="getCount_UsePatient_message_doctor" resultType="int">
+	<!-- SELECT COUNT(1) 
+	FROM patient p LEFT JOIN patient_message pm ON p.patient_id = pm.patient_id LEFT JOIN room r ON r.room_id = pm.room_id  
+	LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id LEFT JOIN  bed ON bed.bed_id = pm.bed_id -->
+	SELECT COUNT(1)
+	FROM(
+	SELECT  COUNT(1)
+		FROM patient p LEFT JOIN patient_message pm ON p.patient_id = pm.patient_id LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+		LEFT JOIN room r ON r.room_id = pm.room_id LEFT JOIN  bed ON bed.bed_id = pm.bed_id LEFT JOIN `user` u ON pm.doctor_id = u.user_work_id
+		LEFT JOIN payment pay ON  p.patient_id = pay.patient_id
+		WHERE 1=1
+		AND pm.churuan_time is  null
+		AND EXISTS (SELECT * FROM  patient_message WHERE patient_message.patient_id = p.patient_id)
+			<if test="patient_id!=null and patient_id!=''">AND p.patient_id like CONCAT('%','${patient_id}','%')</if>
+			<if test="select_deparment_id!=null and select_deparment_id!=''">AND pm.deparment_id = #{select_deparment_id}</if>
+			<if test="patient_name!=null and patient_name!=''">AND p.patient_name like CONCAT('%','${patient_name}','%')</if>
+			<if test="start_ruyuan_time!=null and end_ruyuan_time!=null ">AND pm.ruyuan_time BETWEEN '${start_ruyuan_time}' AND '${end_ruyuan_time}'</if>
+			<if test="role_id!=1">AND pm.doctor_id = #{doctor_id}	</if>
+		GROUP BY p.patient_id
+		ORDER BY pm.ruyuan_time DESC)M		
+   </select>
+   
+    <resultMap type="Patient_message" id="selectAllPatient_message_doctorMap">
+   <id column="patient_message_id" property="patient_message_id"/>
+  <result column="deparment_id" property="deparment_id"/>
+  <result column="room_id" property="room_id"/>
+  <result column="bed_id" property="bed_id"/>
+  <result column="ruyuan_time" property="ruyuan_time"/>
+  <result column="ruyuan_state" property="ruyuan_state"/>
+  <result column="case_id" property="case_id"/>
+  <result column="transfer_state" property="transfer_state"/>
+  <result column="diagnosis_a" property="diagnosis_a"/>
+  <result column="doctor_id" property="doctor_id"/>
+  <result column="nurse_level" property="nurse_level"/>
+  <result column="sum_advance_payment" property="sum_advance_payment"/>
+  <result column="sum_price" property="sum_price"/>
+  <result column="after_expenses" property="after_expenses"/>        
+   <association property="patient" javaType="zwf.po.Patient"  >
+   	<id column="patient_id" property="patient_id"/>
+   	<result column="brith_day" property="brith_day"/>
+   	<result column="patient_name" property="patient_name"/>
+    <result column="marital_state" property="marital_state"/>
+    <result column="patient_meal" property="patient_meal"/>
+    <result column="brith_place" property="brith_place"/>
+    <result column="id_number" property="id_number"/>
+    <result column="phone" property="phone"/>
+    <result column="age" property="age"/>
+    <result column="apatient_name" property="apatient_name"/>
+    <result column="aphone" property="aphone"/>
+    <result column="relation" property="relation"/>
+     <result column="insurance" property="insurance"/>
+   </association>
+    <association property="deparment" javaType="zwf.po.Deparment"  >
+    <id column="deparment_id" property="deparment_id"/>
+    	<result column="deparment_name" property="deparment_name"/>
+    </association>
+    <association property="room" javaType="zwf.po.Room"  >
+    <id column="room_id" property="room_id"/>
+    	<result column="room_name" property="room_name"/>
+    </association>
+    <association property="bed" javaType="zwf.po.Bed"  >
+    <id column="bed_id" property="bed_id"/>
+    	<result column="bed_name" property="bed_name"/>
+    </association>
+     <association property="user" javaType="zwf.po.User"  >
+    <id column="user_id" property="user_id"/>
+    	<result column="user_name" property="user_name"/>
+    </association>
+    <association property="payment" javaType="zwf.po.Payment"  >
+    <id column="payment_id" property="payment_id"/>
+    	<result column="operating_expenses" property="operating_expenses"/>
+    	<result column="refunds" property="refunds"/>
+    	<result column="advance_payment" property="advance_payment"/>
+    	<result column="advance_payment_time" property="advance_payment_time"/>
+    	<result column="payee" property="payee"/>
+    	<result column="supplementary_payment" property="supplementary_payment"/>
+    	<result column="drug_costs" property="drug_costs"/>
+    	<result column="survey_fee" property="survey_fee"/>
+    	<result column="settle_accounts" property="settle_accounts"/>
+    	<result column="settle_accounts_time" property="settle_accounts_time"/>
+		<result column="payment_status" property="payment_status"/>    
+    </association>
+   </resultMap>
+   <!--普通查询  -->
+	<select id="selectAllPatient_message_doctor" resultMap="selectAllPatient_message_doctorMap" parameterType="Map">
+	SELECT u.user_name,p.*,pm.*,d.*,r.*,bed.*,pay.*,SUM(pay.advance_payment) AS sum_advance_payment,
+	SUM(pay.sum_expenses) AS sum_price,SUM(pay.advance_payment) - SUM(pay.sum_expenses) AS after_expenses
+	FROM patient p LEFT JOIN patient_message pm ON p.patient_id = pm.patient_id LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+	LEFT JOIN room r ON r.room_id = pm.room_id LEFT JOIN  bed ON bed.bed_id = pm.bed_id LEFT JOIN `user` u ON pm.doctor_id = u.user_work_id
+	LEFT JOIN payment pay ON  p.patient_id = pay.patient_id
+	WHERE 1=1
+		<if test="patient_id!=null and patient_id!=''">AND p.patient_id like CONCAT('%','${patient_id}','%')</if>
+		<if test="patient_name!=null and patient_name!=''">AND p.patient_name like CONCAT('%','${patient_name}','%')</if>
+		<if test="start_ruyuan_time!=null and end_ruyuan_time!=null ">AND pm.ruyuan_time BETWEEN '${start_ruyuan_time}' AND '${end_ruyuan_time}'</if>
+		AND pm.doctor_id = 	#{doctor_id}
+	GROUP BY p.patient_id
+	ORDER BY pm.ruyuan_time DESC	
+		<if test="null != beginNumber and null != limit">
+  		LIMIT #{beginNumber},#{limit}
+  		</if>
+  		
+	</select>
+
+	<!--查询总数  -->
+	<select id="getCountPatient_message_doctor" resultType="int">
+	<!-- SELECT COUNT(1) 
+	FROM patient p LEFT JOIN patient_message pm ON p.patient_id = pm.patient_id LEFT JOIN room r ON r.room_id = pm.room_id  
+	LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id LEFT JOIN  bed ON bed.bed_id = pm.bed_id -->
+	SELECT COUNT(1)
+	FROM(
+	SELECT  COUNT(1)
+		FROM patient p LEFT JOIN patient_message pm ON p.patient_id = pm.patient_id LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+		LEFT JOIN room r ON r.room_id = pm.room_id LEFT JOIN  bed ON bed.bed_id = pm.bed_id LEFT JOIN `user` u ON pm.doctor_id = u.user_work_id
+		LEFT JOIN payment pay ON  p.patient_id = pay.patient_id
+		WHERE 1=1
+			<if test="patient_id!=null and patient_id!=''">AND p.patient_id like CONCAT('%','${patient_id}','%')</if>
+			<if test="patient_name!=null and patient_name!=''">AND p.patient_name like CONCAT('%','${patient_name}','%')</if>
+			<if test="start_ruyuan_time!=null and end_ruyuan_time!=null ">AND pm.ruyuan_time BETWEEN '${start_ruyuan_time}' AND '${end_ruyuan_time}'</if>
+			AND pm.doctor_id = 	#{doctor_id}
+		GROUP BY p.patient_id
+		ORDER BY pm.ruyuan_time DESC)M
+		
+		
+   </select>
+   
+   
+   
+   <resultMap type="Patient_message" id="selectAll_Payment_select_Patient_messageMap">
+   <id column="patient_message_id" property="patient_message_id"/>
+  <result column="deparment_id" property="deparment_id"/>
+  <result column="room_id" property="room_id"/>
+  <result column="bed_id" property="bed_id"/>
+  <result column="ruyuan_time" property="ruyuan_time"/>
+  <result column="ruyuan_state" property="ruyuan_state"/>
+  <result column="case_id" property="case_id"/>
+  <result column="transfer_state" property="transfer_state"/>
+  <result column="diagnosis_a" property="diagnosis_a"/>
+  <result column="doctor_id" property="doctor_id"/>
+  <result column="nurse_level" property="nurse_level"/>
+  <result column="sum_advance_payment" property="sum_advance_payment"/>
+  <result column="sum_price" property="sum_price"/>
+  <result column="after_expenses" property="after_expenses"/>   
+   <association property="patient" javaType="zwf.po.Patient"  >
+   	<id column="patient_id" property="patient_id"/>
+   	<result column="brith_day" property="brith_day"/>
+   	<result column="patient_name" property="patient_name"/>
+    <result column="marital_state" property="marital_state"/>
+    <result column="patient_meal" property="patient_meal"/>
+    <result column="brith_place" property="brith_place"/>
+    <result column="id_number" property="id_number"/>
+    <result column="phone" property="phone"/>
+    <result column="age" property="age"/>
+    <result column="apatient_name" property="apatient_name"/>
+    <result column="aphone" property="aphone"/>
+    <result column="relation" property="relation"/>
+     <result column="insurance" property="insurance"/>
+   </association>
+    <association property="deparment" javaType="zwf.po.Deparment"  >
+    <id column="deparment_id" property="deparment_id"/>
+    	<result column="deparment_name" property="deparment_name"/>
+    </association>
+    <association property="room" javaType="zwf.po.Room"  >
+    <id column="room_id" property="room_id"/>
+    	<result column="room_name" property="room_name"/>
+    </association>
+    <association property="bed" javaType="zwf.po.Bed"  >
+    <id column="bed_id" property="bed_id"/>
+    	<result column="bed_name" property="bed_name"/>
+    </association>
+     <association property="user" javaType="zwf.po.User"  >
+    <id column="user_id" property="user_id"/>
+    	<result column="user_name" property="user_name"/>
+    </association>
+    <association property="payment" javaType="zwf.po.Payment"  >
+    <id column="payment_id" property="payment_id"/>
+    	<result column="operating_expenses" property="operating_expenses"/>
+    	<result column="refunds" property="refunds"/>
+    	<result column="advance_payment" property="advance_payment"/>
+    	<result column="advance_payment_time" property="advance_payment_time"/>
+    	<result column="payee" property="payee"/>
+    	<result column="supplementary_payment" property="supplementary_payment"/>
+    	<result column="drug_costs" property="drug_costs"/>
+    	<result column="survey_fee" property="survey_fee"/>
+    	<result column="settle_accounts" property="settle_accounts"/>
+    	<result column="settle_accounts_time" property="settle_accounts_time"/>
+		<result column="payment_status" property="payment_status"/>    
+    </association>
+   </resultMap>
+   <!--普通查询  -->
+	<select id="selectAll_Payment_select_Patient_message" resultMap="selectAll_Payment_select_Patient_messageMap" parameterType="Map">
+	SELECT SUM(pay.sum_expenses) - IFNULL(SUM(
+	CASE pay.payment_status WHEN 3 THEN pay.sum_expenses END 
+	),0) AS sum_price,u.user_name,p.*,pm.*,d.*,r.*,bed.*,pay.*
+	FROM patient p LEFT JOIN patient_message pm ON p.patient_id = pm.patient_id LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+	LEFT JOIN room r ON r.room_id = pm.room_id LEFT JOIN  bed ON bed.bed_id = pm.bed_id LEFT JOIN `user` u ON pm.doctor_id = u.user_work_id
+	LEFT JOIN payment pay ON  p.patient_id = pay.patient_id 
+	WHERE 1=1
+	AND pm.churuan_time is null
+	AND  pay.sum_expenses >0 
+		<if test="patient_id!=null and patient_id!=''">AND p.patient_id like CONCAT('%','${patient_id}','%')</if>
+		<if test="select_deparment_id!=null and select_deparment_id!=''">AND pm.deparment_id = #{select_deparment_id}</if>
+		<if test="patient_name!=null and patient_name!=''">AND p.patient_name like CONCAT('%','${patient_name}','%')</if>
+		<if test="start_ruyuan_time!=null and end_ruyuan_time!=null ">AND pm.ruyuan_time BETWEEN '${start_ruyuan_time}' AND '${end_ruyuan_time}'</if>
+	GROUP BY p.patient_id
+	ORDER BY pm.ruyuan_time DESC	
+		<if test="null != beginNumber and null != limit">
+  		LIMIT #{beginNumber},#{limit}
+  		</if>
+  		
+	</select>
+
+	<!--查询总数  -->
+	<select id="getCount_Payment_select_Patient_message" resultType="int">	
+	SELECT COUNT(1)
+	FROM(
+	SELECT  COUNT(1)
+		FROM patient p LEFT JOIN patient_message pm ON p.patient_id = pm.patient_id LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+		LEFT JOIN room r ON r.room_id = pm.room_id LEFT JOIN  bed ON bed.bed_id = pm.bed_id LEFT JOIN `user` u ON pm.doctor_id = u.user_work_id
+		LEFT JOIN payment pay ON  p.patient_id = pay.patient_id
+		WHERE 1=1
+		AND pm.churuan_time is null
+		AND  pay.sum_expenses >0 
+			<if test="select_deparment_id!=null and select_deparment_id!=''">AND pm.deparment_id = #{select_deparment_id}</if>
+			<if test="patient_id!=null and patient_id!=''">AND p.patient_id like CONCAT('%','${patient_id}','%')</if>
+			<if test="patient_name!=null and patient_name!=''">AND p.patient_name like CONCAT('%','${patient_name}','%')</if>
+			<if test="start_ruyuan_time!=null and end_ruyuan_time!=null ">AND pm.ruyuan_time BETWEEN '${start_ruyuan_time}' AND '${end_ruyuan_time}'</if>
+		GROUP BY p.patient_id
+		ORDER BY pm.ruyuan_time DESC)M		
+   </select>
+   
+   
+   
+   <resultMap type="Patient_message" id="selectAll_Payment_today_Patient_messageMap">
+   <id column="patient_message_id" property="patient_message_id"/>
+  <result column="deparment_id" property="deparment_id"/>
+  <result column="room_id" property="room_id"/>
+  <result column="bed_id" property="bed_id"/>
+  <result column="ruyuan_time" property="ruyuan_time"/>
+  <result column="ruyuan_state" property="ruyuan_state"/>
+  <result column="case_id" property="case_id"/>
+  <result column="transfer_state" property="transfer_state"/>
+  <result column="diagnosis_a" property="diagnosis_a"/>
+  <result column="doctor_id" property="doctor_id"/>
+  <result column="nurse_level" property="nurse_level"/>
+  <result column="sum_advance_payment" property="sum_advance_payment"/>
+  <result column="sum_price" property="sum_price"/>
+  <result column="after_expenses" property="after_expenses"/>   
+  <result column="nopay" property="nopay"/>   
+  <result column="havepay" property="havepay"/>   
+   <association property="patient" javaType="zwf.po.Patient"  >
+   	<id column="patient_id" property="patient_id"/>
+   	<result column="brith_day" property="brith_day"/>
+   	<result column="patient_name" property="patient_name"/>
+    <result column="marital_state" property="marital_state"/>
+    <result column="patient_meal" property="patient_meal"/>
+    <result column="brith_place" property="brith_place"/>
+    <result column="id_number" property="id_number"/>
+    <result column="phone" property="phone"/>
+    <result column="age" property="age"/>
+    <result column="apatient_name" property="apatient_name"/>
+    <result column="aphone" property="aphone"/>
+    <result column="relation" property="relation"/>
+     <result column="insurance" property="insurance"/>
+   </association>
+    <association property="deparment" javaType="zwf.po.Deparment"  >
+    <id column="deparment_id" property="deparment_id"/>
+    	<result column="deparment_name" property="deparment_name"/>
+    </association>
+    <association property="room" javaType="zwf.po.Room"  >
+    <id column="room_id" property="room_id"/>
+    	<result column="room_name" property="room_name"/>
+    </association>
+    <association property="bed" javaType="zwf.po.Bed"  >
+    <id column="bed_id" property="bed_id"/>
+    	<result column="bed_name" property="bed_name"/>
+    </association>
+     <association property="user" javaType="zwf.po.User"  >
+    <id column="user_id" property="user_id"/>
+    	<result column="user_name" property="user_name"/>
+    </association>
+    <association property="payment" javaType="zwf.po.Payment"  >
+    <id column="payment_id" property="payment_id"/>
+    	<result column="operating_expenses" property="operating_expenses"/>
+    	<result column="refunds" property="refunds"/>
+    	<result column="advance_payment" property="advance_payment"/>
+    	<result column="advance_payment_time" property="advance_payment_time"/>
+    	<result column="payee" property="payee"/>
+    	<result column="supplementary_payment" property="supplementary_payment"/>
+    	<result column="drug_costs" property="drug_costs"/>
+    	<result column="survey_fee" property="survey_fee"/>
+    	<result column="settle_accounts" property="settle_accounts"/>
+    	<result column="settle_accounts_time" property="settle_accounts_time"/>
+		<result column="payment_status" property="payment_status"/>    
+    </association>
+   </resultMap>
+   <!--普通查询  -->
+	<select id="selectAll_Payment_today_Patient_message" resultMap="selectAll_Payment_today_Patient_messageMap" parameterType="Map">
+	SELECT SUM(pay.sum_expenses) - IFNULL(SUM(
+	CASE pay.payment_status WHEN 3 THEN pay.sum_expenses END 
+	),0) AS sum_price,IFNULL(SUM(
+	CASE pay.payment_status WHEN 0 THEN pay.sum_expenses END 
+	),0) + IFNULL(SUM(
+	CASE pay.payment_status WHEN 2 THEN pay.sum_expenses END 
+	),0) AS nopay,
+	IFNULL(SUM(
+	CASE pay.payment_status WHEN 1 THEN pay.sum_expenses END 
+	),0) AS havepay,
+	u.user_name,p.*,pm.*,d.*,r.*,bed.*,pay.*,SUM(pay.advance_payment) AS sum_advance_payment
+	FROM patient p LEFT JOIN patient_message pm ON p.patient_id = pm.patient_id LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+	LEFT JOIN room r ON r.room_id = pm.room_id LEFT JOIN  bed ON bed.bed_id = pm.bed_id LEFT JOIN `user` u ON pm.doctor_id = u.user_work_id
+	LEFT JOIN payment pay ON  p.patient_id = pay.patient_id 
+	WHERE 1=1
+	AND  pay.sum_expenses >0 
+	AND  (pay.advance_payment_time BETWEEN '${start_ruyuan_time}'	 AND '${end_ruyuan_time}' )
+		<if test="patient_id!=null and patient_id!=''">AND p.patient_id like CONCAT('%','${patient_id}','%')</if>
+		<if test="role_id==4">AND pm.deparment_id = #{select_deparment_id}</if>
+		<if test="patient_name!=null and patient_name!=''">AND p.patient_name like CONCAT('%','${patient_name}','%')</if>
+	GROUP BY p.patient_id
+	ORDER BY pm.ruyuan_time DESC	
+		<if test="null != beginNumber and null != limit">
+  		LIMIT #{beginNumber},#{limit}
+  		</if>
+  		
+	</select>
+
+	<!--查询总数  -->
+	<select id="getCount_Payment_today_Patient_message" resultType="int">	
+	SELECT COUNT(1)
+	FROM(
+	SELECT  COUNT(1)
+		FROM patient p LEFT JOIN patient_message pm ON p.patient_id = pm.patient_id LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+		LEFT JOIN room r ON r.room_id = pm.room_id LEFT JOIN  bed ON bed.bed_id = pm.bed_id LEFT JOIN `user` u ON pm.doctor_id = u.user_work_id
+		LEFT JOIN payment pay ON  p.patient_id = pay.patient_id
+		WHERE 1=1
+		AND  pay.sum_expenses >0
+		AND  (pay.advance_payment_time BETWEEN '${start_ruyuan_time}'	 AND '${end_ruyuan_time}' ) 
+			<if test="select_deparment_id!=null and select_deparment_id!=''">AND pm.deparment_id = #{select_deparment_id}</if>
+			<if test="patient_id!=null and patient_id!=''">AND p.patient_id like CONCAT('%','${patient_id}','%')</if>
+			<if test="patient_name!=null and patient_name!=''">AND p.patient_name like CONCAT('%','${patient_name}','%')</if>
+		GROUP BY p.patient_id
+		ORDER BY pm.ruyuan_time DESC)M		
+   </select>
+   
+   <update id="update_chuyuan_Patient_message" parameterType="patient_message">
+	update patient_message
+	<set>	 
+	 <if test="churuan_time!=null">
+	 	churuan_time=#{churuan_time},
+	 </if>
+	 <if test="churuan_room !=null">
+	 	churuan_room=#{churuan_room},
+	 </if>
+	 room_id = null,
+	 bed_id = null,
+	 deparment_id = null,
+	</set>
+	where patient_message_id=#{patient_message_id}
+	</update>
+   
+   
+   <select id="chuyuan_status" resultType="int">	
+		SELECT COUNT(1) 
+		FROM patient p,patient_message pm
+		WHERE p.patient_id = pm.patient_id
+		AND p.patient_id = #{patient_id}
+		AND pm.churuan_time IS NULL
+   </select>
+   
+   
+   
+</mapper>

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="zwf.dao.Inspection_itemDao">
+	
+	
+   
+   <resultMap type="Inspection_item" id="select_Inspection_itemMap">
+   <id column="Inspection_item_id" property="Inspection_item_id"/>
+  <result column="Inspection_item_name" property="Inspection_item_name"/>
+  <result column="Inspection_item_py" property="Inspection_item_py"/>
+  <result column="Inspection_item_pirce" property="Inspection_item_pirce"/>
+  <result column="Inspection_item_demand" property="Inspection_item_demand"/>
+  <result column="Inspection_item_unit" property="Inspection_item_unit"/>
+   </resultMap>
+   <select id="select_Inspection_item" resultMap="select_Inspection_itemMap" parameterType="Map">
+   		
+		SELECT *
+		FROM inspection_item
+		
+		<if test="null != beginNumber and null != limit">
+  		LIMIT #{beginNumber},#{limit}
+  		</if>
+	</select>
+	
+	<select id="getCount_Inspection_item" resultType="int">
+		
+		SELECT COUNT(1) 
+		FROM inspection_item
+		
+   </select> 
+   
+   <!--添加  -->
+	<insert id="add_Inspection_item" parameterType="Inspection_item">
+	insert into inspection_item(Inspection_item_unit,Inspection_item_name,Inspection_item_py,Inspection_item_pirce,Inspection_item_demand)
+	values(#{Inspection_item_unit},#{Inspection_item_name},#{Inspection_item_py},#{Inspection_item_pirce},#{Inspection_item_demand})
+	</insert>
+	
+	<!--更新  -->
+	<update id="edit_Inspection_item" parameterType="Inspection_item">
+	update inspection_item
+	<set>
+	 <if test="Inspection_item_name!=null">
+	 	Inspection_item_name=#{Inspection_item_name},
+	 </if>
+	 <if test="Inspection_item_py!=null">
+	 	Inspection_item_py=#{Inspection_item_py},
+	 </if>
+	 <if test="Inspection_item_pirce!=null">
+	 	Inspection_item_pirce=#{Inspection_item_pirce},
+	 </if>
+	 <if test="Inspection_item_demand!=null">
+	 	Inspection_item_demand=#{Inspection_item_demand},
+	 </if>
+	 <if test="Inspection_item_unit!=null">
+	 	Inspection_item_unit=#{Inspection_item_unit},
+	 </if>
+	</set>
+	where Inspection_item_id=#{Inspection_item_id}
+	</update>
+	
+	<resultMap type="Inspection_item" id="select_condition_Inspection_itemMap">
+   <id column="Inspection_item_id" property="Inspection_item_id"/>
+  <result column="Inspection_item_name" property="Inspection_item_name"/>
+  <result column="Inspection_item_py" property="Inspection_item_py"/>
+  <result column="Inspection_item_pirce" property="Inspection_item_pirce"/>
+  <result column="Inspection_item_demand" property="Inspection_item_demand"/>
+  <result column="Inspection_item_unit" property="Inspection_item_unit"/>
+   </resultMap>
+   <select id="select_condition_Inspection_item" resultMap="select_condition_Inspection_itemMap" parameterType="Map">
+   		
+		SELECT *
+		FROM inspection_item
+		WHERE 1=1
+		<if test="condition !=null "  >
+		AND (Inspection_item_py like CONCAT('%','${condition}','%') OR Inspection_item_name like CONCAT('%','${condition}','%'))
+		</if>
+	</select>
+	
+</mapper>

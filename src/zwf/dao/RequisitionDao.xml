@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="zwf.dao.RequisitionDao">
+	
+	<!--添加  -->
+	<insert id="addRequisition_message" parameterType="requisition">
+	insert into requisition(patient_id,start_time,nurse_id)
+	values(#{patient_id},#{start_time},#{nurse_id})
+	</insert>
+	
+	<!--存在的数目  -->
+	<select id="countRequisition_message" resultType="int">
+  		SELECT COUNT(1)
+		FROM requisition req,patient p
+		WHERE req.patient_id = p.patient_id 
+		AND p.patient_id = #{patient_id}
+		AND req.start_time = #{start_time}
+		AND req.nurse_id = #{nurse_id}
+   </select>
+	<!--查找id  -->
+	<select id="showRequisition_message_Id" resultType="int">
+  		SELECT req.requisition_id 
+  		FROM requisition req
+		WHERE req.patient_id = #{patient_id}
+		AND req.start_time = #{start_time}
+		AND req.nurse_id = #{nurse_id}
+   </select>
+   
+   <resultMap type="requisition" id="select_RequisitionMap">
+   <id column="requisition_id" property="requisition_id"/>
+  <result column="start_time" property="start_time"/>
+  <result column="check_state" property="check_state"/>
+  <result column="nurse_id" property="nurse_id"/>
+  <result column="sum_advance_payment" property="sum_advance_payment"/>
+  <result column="sum_price" property="sum_price"/>
+  <result column="after_expenses" property="after_expenses"/>
+   <association property="patient" javaType="zwf.po.Patient"  >
+   	<id column="patient_id" property="patient_id"/>
+   	<result column="patient_name" property="patient_name"/>
+   	<result column="patient_meal" property="patient_meal"/>
+   	<result column="age" property="age"/>
+   </association>
+    <association property="patient_message" javaType="zwf.po.Patient_message"  >
+    <id column="patient_message_id" property="patient_message_id"/>
+    	<result column="ruyuan_time" property="ruyuan_time"/>
+    	<result column="diagnosis_a" property="diagnosis_a"/>
+    </association>
+    <association property="bed" javaType="zwf.po.Bed"  >
+    <id column="bed_id" property="bed_id"/>
+    	<result column="bed_name" property="bed_name"/>
+    </association>
+    <association property="room" javaType="zwf.po.Room"  >
+    <id column="room_id" property="room_id"/>
+    	<result column="room_name" property="room_name"/>
+    </association>
+    <association property="deparment" javaType="zwf.po.Deparment"  >
+    <id column="deparment_id" property="deparment_id"/>
+    	<result column="deparment_name" property="deparment_name"/>
+    </association>
+     <association property="user" javaType="zwf.po.User"  >
+    <id column="user_id" property="user_id"/>
+    	<result column="user_name" property="user_name"/>
+    </association>
+    <association property="payment" javaType="zwf.po.Payment"  >
+    <id column="payment_id" property="payment_id"/>
+    	<result column="operating_expenses" property="operating_expenses"/>
+    	<result column="refunds" property="refunds"/>
+    	<result column="advance_payment" property="advance_payment"/>
+    	<result column="advance_payment_time" property="advance_payment_time"/>
+    	<result column="payee" property="payee"/>
+    	<result column="supplementary_payment" property="supplementary_payment"/>
+    	<result column="drug_costs" property="drug_costs"/>
+    	<result column="survey_fee" property="survey_fee"/>
+    	<result column="settle_accounts" property="settle_accounts"/>
+    	<result column="settle_accounts_time" property="settle_accounts_time"/>
+		<result column="payment_status" property="payment_status"/>    
+    </association>
+   </resultMap>
+   <select id="select_Requisition" resultMap="select_RequisitionMap" parameterType="Map">
+   		<if test="role_id==1 or role_id==3">	
+		<!-- SELECT u.*,p.*,b.*,pm.*,req.*,r.*,d.*,SUM(pay.advance_payment) as sum_advance_payment,
+	    SUM(pay.sum_expenses) AS sum_price,SUM(pay.advance_payment) - SUM(pay.sum_expenses) AS after_expenses
+		FROM  patient p,patient_message pm,deparment d,room r,bed b,`user` u,requisition req,payment pay
+		WHERE p.patient_id = pm.patient_id AND p.patient_id = req.patient_id
+		AND pm.deparment_id = d.deparment_id AND pm.room_id = r.room_id 
+		AND pm.bed_id =b.bed_id AND u.user_work_id = req.nurse_id
+		AND p.patient_id = pay.patient_id 
+		GROUP BY p.patient_id
+		ORDER BY req.start_time DESC -->
+		SELECT u.*,p.*,b.*,pm.*,req.*,r.*,d.*,SUM(pay.advance_payment) as sum_advance_payment,
+	    SUM(pay.sum_expenses) AS sum_price,SUM(pay.advance_payment) - SUM(pay.sum_expenses) AS after_expenses
+		FROM requisition req LEFT JOIN patient p ON p.patient_id = req.patient_id
+		LEFT JOIN patient_message pm ON pm.patient_id = p.patient_id
+		LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+		LEFT JOIN room r ON r.room_id = pm.room_id
+		LEFT JOIN bed b ON b.bed_id = pm.bed_id
+		LEFT JOIN payment pay ON pay.patient_id = p.patient_id
+		LEFT JOIN `user` u ON u.user_work_id = req.nurse_id
+		WHERE req.start_time = #{start_time}
+		<if test="patient_name!=null and patient_name!=''">AND p.patient_name like CONCAT('%','${patient_name}','%')</if>
+		<if test="patient_id!=null and patient_id!=''">AND p.patient_id like CONCAT('%','${patient_id}','%')</if>
+		GROUP BY req.requisition_id
+		ORDER BY req.start_time DESC
+		</if> 
+		<if test="role_id!=1 and role_id !=3 ">		
+		SELECT u.*,p.*,b.*,pm.*,req.*,r.*,d.*,SUM(pay.advance_payment) as sum_advance_payment,
+	    SUM(pay.sum_expenses) AS sum_price,SUM(pay.advance_payment) - SUM(pay.sum_expenses) AS after_expenses
+		FROM requisition req LEFT JOIN patient p ON p.patient_id = req.patient_id
+		LEFT JOIN patient_message pm ON pm.patient_id = p.patient_id
+		LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+		LEFT JOIN room r ON r.room_id = pm.room_id
+		LEFT JOIN bed b ON b.bed_id = pm.bed_id
+		LEFT JOIN payment pay ON pay.patient_id = p.patient_id
+		LEFT JOIN `user` u ON u.user_work_id = req.nurse_id
+		WHERE req.start_time = #{start_time}
+		AND d.deparment_id = NULL
+		GROUP BY req.requisition_id
+		ORDER BY req.start_time DESC
+		</if>	
+		<if test="null != beginNumber and null != limit">
+  		LIMIT #{beginNumber},#{limit}
+  		</if>
+	</select>
+	
+	<select id="getCount_Requisition" resultType="int">
+		<if test="role_id==1 or role_id==3">
+		SELECT COUNT(1)
+		FROM(
+		SELECT COUNT(1) 
+		FROM requisition req 
+		WHERE req.start_time = #{start_time}
+		<if test="patient_name!=null and patient_name!=''">AND p.patient_name like CONCAT('%','${patient_name}','%')</if>
+		<if test="patient_id!=null and patient_id!=''">AND p.patient_id like CONCAT('%','${patient_id}','%')</if>
+		GROUP BY req.requisition_id
+		ORDER BY req.start_time DESC)M
+		</if> 
+		<if test="role_id!=1 and role_id !=3 ">
+		SELECT COUNT(1)
+		FROM(
+		SELECT COUNT(1) 
+		FROM requisition req LEFT JOIN patient p ON p.patient_id = req.patient_id
+		LEFT JOIN patient_message pm ON pm.patient_id = p.patient_id
+		LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+		LEFT JOIN room r ON r.room_id = pm.room_id
+		LEFT JOIN bed b ON b.bed_id = pm.bed_id
+		LEFT JOIN payment pay ON pay.patient_id = p.patient_id
+		LEFT JOIN `user` u ON u.user_work_id = req.nurse_id
+		WHERE req.start_time = #{start_time}
+		AND d.deparment_id = NULL	)M
+		</if> 
+   </select> 
+</mapper>

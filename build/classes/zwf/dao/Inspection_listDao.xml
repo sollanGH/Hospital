@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="zwf.dao.Inspection_listDao">
+	
+	
+	<insert id="action_Inspection_list" parameterType="Inspection_list">
+	INSERT INTO inspection_list(inspection_list.Inspection_item_list_unit,inspection_list.Inspection_item_list_id,inspection_list.Inspection_item_id,inspection_list.Inspection_item_list_name,
+	inspection_list.Inspection_item_list_abbr,inspection_list.Inspection_item_list_upper_limt,
+	inspection_list.Inspection_item_list_lower_limit,inspection_list.Inspection_item_list_other_limit,inspection_list.Inspection_id)
+	SELECT iit.Inspection_item_list_unit,iit.Inspection_item_list_id,iit.Inspection_item_id,iit.Inspection_item_list_name,iit.Inspection_item_list_abbr,iit.Inspection_item_list_upper_limt,
+	iit.Inspection_item_list_lower_limit,iit.Inspection_item_list_other_limit,i.inspection_id
+	FROM inspection i,inspection_item_list iit
+	WHERE i.inspection_item_id = iit.Inspection_item_id
+	AND i.inspection_id = "${Inspection_id}"
+
+	</insert>
+	
+	<resultMap type="Inspection_list" id="select_Inspection_listMap">
+   <id column="Inspection_list_id" property="Inspection_list_id"/>
+   <result column="Inspection_id" property="Inspection_id"/>
+  <result column="Inspection_item_list_id" property="Inspection_item_list_id"/>
+  <result column="Inspection_item_id" property="Inspection_item_id"/>
+  <result column="Inspection_item_list_abbr" property="Inspection_item_list_abbr"/>
+  <result column="Inspection_item_list_upper_limt" property="Inspection_item_list_upper_limt"/>
+  <result column="Inspection_item_list_lower_limit" property="Inspection_item_list_lower_limit"/>
+  <result column="Inspection_item_list_other_limit" property="Inspection_item_list_other_limit"/>
+  <result column="Inspection_item_result" property="Inspection_item_result"/>
+  <result column="Inspection_list_suggest" property="Inspection_list_suggest"/>
+   </resultMap>
+   <select id="select_Inspection_list" resultMap="select_Inspection_listMap" parameterType="Map">
+   		
+		SELECT *
+		FROM inspection_list il		
+		WHERE il.Inspection_id =#{Inspection_id}
+		
+		<if test="null != beginNumber and null != limit">
+  		LIMIT #{beginNumber},#{limit}
+  		</if>
+	</select>
+	
+	<select id="getCount_Inspection_list" resultType="int">
+		
+		SELECT COUNT(1) 
+		FROM inspection_list il		
+		WHERE il.Inspection_id =#{Inspection_id}
+		
+   </select> 
+   
+   <update id="edit_Inspection_list" parameterType="Inspection_list">
+	update inspection_list
+	<set>
+		inspection_item_result = #{inspection_item_result},		
+		
+  		inspection_list_suggest = #{inspection_list_suggest}
+  		
+			
+	</set>
+	where  inspection_id = #{inspection_id} and inspection_item_list_id = #{inspection_item_list_id}
+	</update>
+	
+	<select id="count_action_Inspection_list" resultType="int">
+		
+		SELECT COUNT(1)
+		FROM inspection_list il
+		WHERE il.Inspection_id = #{Inspection_id}
+		AND il.Inspection_item_result IS NULL
+		
+   </select>
+   
+	
+	<resultMap type="Inspection_list" id="printf_select_Inspection_listMap">
+   <id column="Inspection_list_id" property="Inspection_list_id"/>
+   <result column="Inspection_id" property="Inspection_id"/>
+  <result column="Inspection_item_list_id" property="Inspection_item_list_id"/>
+  <result column="Inspection_item_id" property="Inspection_item_id"/>
+  <result column="Inspection_item_list_abbr" property="Inspection_item_list_abbr"/>
+  <result column="Inspection_item_list_upper_limt" property="Inspection_item_list_upper_limt"/>
+   <result column="Inspection_item_list_lower_limit" property="Inspection_item_list_lower_limit"/>
+    <result column="Inspection_item_list_name" property="Inspection_item_list_name"/>
+  <result column="Inspection_item_list_unit" property="Inspection_item_list_unit"/>
+  <result column="Inspection_item_list_other_limit" property="Inspection_item_list_other_limit"/>
+  <result column="Inspection_item_result" property="Inspection_item_result"/>
+  <result column="Inspection_list_suggest" property="Inspection_list_suggest"/>
+   <association property="inspection" javaType="zwf.po.Inspection"  >
+    <id column="inspection_id" property="inspection_id"/>
+    	<result column="medical_orders_list_action_id" property="medical_orders_list_action_id"/>
+    	<result column="inspection_suggest" property="inspection_suggest"/>
+    </association>
+    <association property="medical_Orders_List_Action" javaType="zwf.po.Medical_Orders_List_Action"  >
+    <id column="medical_orders_list_action_id" property="medical_orders_list_action_id"/>
+    	<result column="medical_orders_action_id" property="medical_orders_action_id"/>
+    </association>
+     <association property="medical_Orders_Action" javaType="zwf.po.Medical_Orders_Action"  >
+   	<id column="medical_orders_action_id" property="medical_orders_action_id"/>
+   	<result column="start_time" property="start_time"/>
+   	<result column="doctor_id" property="doctor_id"/>
+   	<result column="check_state" property="check_state"/>
+   	<result column="medical_orders_id" property="medical_orders_id"/>
+   </association>
+   <association property="patient" javaType="zwf.po.Patient"  >
+    <id column="patient_id" property="patient_id"/>
+    	<result column="patient_name" property="patient_name"/>
+    	<result column="patient_meal" property="patient_meal"/>
+    </association>
+    <association property="patient_message" javaType="zwf.po.Patient_message"  >
+    <id column="patient_message_id" property="patient_message_id"/>
+    	<result column="ruyuan_time" property="ruyuan_time"/>
+    	<result column="diagnosis_a" property="diagnosis_a"/>
+    </association>
+    <association property="deparment" javaType="zwf.po.Deparment"  >
+    <id column="deparment_id" property="deparment_id"/>
+    	<result column="deparment_name" property="deparment_name"/>
+    </association>
+    <association property="bed" javaType="zwf.po.Bed"  >
+    <id column="bed_id" property="bed_id"/>
+    	<result column="bed_name" property="bed_name"/>
+    </association>
+   </resultMap>
+   
+   <select id="printf_select_Inspection_list" resultMap="printf_select_Inspection_listMap" parameterType="Map">
+   		
+		SELECT il.Inspection_item_list_abbr,il.Inspection_item_list_name,il.Inspection_item_result,il.Inspection_item_list_lower_limit,il.Inspection_item_list_upper_limt,il.Inspection_item_list_other_limit,il.Inspection_item_list_unit,
+		d.deparment_name,p.patient_meal,p.patient_name,p.patient_id,b.bed_name,i.inspection_suggest
+		FROM inspection_list il
+		LEFT JOIN inspection i ON i.inspection_id = il.Inspection_id
+		LEFT JOIN medical_orders_list_action mola ON mola.medical_orders_list_action_id = i.medical_orders_list_action_id
+		LEFT JOIN medical_orders_action moa ON moa.medical_orders_action_id = mola.medical_orders_action_id
+		LEFT JOIN patient p ON p.patient_id = moa.patient_id
+		LEFT JOIN patient_message pm ON pm.patient_id = p.patient_id
+		LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+		LEFT JOIN bed b ON b.bed_id = pm.bed_id
+		WHERE i.inspection_id = #{Inspection_id}
+	</select>
+	
+	
+	
+</mapper>

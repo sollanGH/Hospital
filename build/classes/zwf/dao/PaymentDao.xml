@@ -1,0 +1,547 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="zwf.dao.PaymentDao">
+	
+	<!--添加 预交金费用 -->
+	<insert id="addPayment_message" parameterType="payment">
+	insert into payment(payment_id,patient_id,requisition_list_id,payment_name,number,single_expenses,sum_expenses,refunds,advance_payment,advance_payment_time,payee,supplementary_payment,settle_accounts,settle_accounts_time,payment_status,payment_category)
+	values(#{payment_id},#{patient_id},#{requisition_list_id},#{payment_name},#{number},#{single_expenses},#{sum_expenses},#{refunds},#{advance_payment},#{advance_payment_time},#{payee},#{supplementary_payment},#{settle_accounts},#{settle_accounts_time},#{payment_status},"预交金")
+	</insert>
+	
+	<!--添加 药品费用 -->
+	<insert id="add_medical_Payment_message" parameterType="payment">
+	INSERT INTO payment (payment_id,patient_id,requisition_list_id,payment_name,number,sum_expenses,single_expenses,advance_payment_time,payment_category)
+	SELECT  substring(MD5(RAND()),1,5) AS payment_id,p.patient_id,reql.requisition_list_id,
+	m.medicines_name AS payment_name,reql.number,m.medicines_price * reql.sum_number AS sum_expenses,m.medicines_price AS single_expenses,TIMESTAMP(NOW()),"药品费"
+	FROM requisition_list reql,medicines m,requisition req,patient p
+	WHERE reql.requisition_id = req.requisition_id AND reql.medicined_id = m.medicines_id
+	AND req.patient_id = p.patient_id AND reql.requisition_list_id in (${select_id})
+	
+	<!-- FROM requisition_list WHERE requisition_list_id in (${select_id}) -->
+	</insert>
+	
+	<!--添加非药品费用 -->
+	<insert id="add_project_Payment_message" parameterType="payment">
+	INSERT INTO payment (payment_id,patient_id,requisition_list_id,payment_name,number,sum_expenses,single_expenses,advance_payment_time,payment_category)
+	SELECT  substring(MD5(RAND()),1,5) AS payment_id,p.patient_id,mola.medical_orders_list_action_id,pro.project_name AS payment_name,mola.sum_number,mola.sum_number * pro.project_price AS sum_expenses,
+	pro.project_price AS  single_expenses,TIMESTAMP(NOW()),
+	(CASE pro.project_category WHEN '1' THEN "护理费" WHEN '4' THEN "治疗费" WHEN '3' THEN "检查费" WHEN '2' THEN "化验费" WHEN '5' THEN "手术费" END) AS payment_cate
+	FROM medical_orders_action moa,medical_orders_list_action mola,patient p,project pro
+	WHERE  NOT EXISTS(SELECT * FROM payment WHERE mola.medical_orders_list_action_id = payment.requisition_list_id )
+    AND moa.patient_id = p.patient_id AND moa.medical_orders_action_id = mola.medical_orders_action_id
+	AND pro.project_id = mola.project_id
+	AND mola.types = 2
+	AND mola.medical_orders_list_action_id in (${select_id})
+	
+	<!-- FROM requisition_list WHERE requisition_list_id in (${select_id}) -->
+	</insert>
+	
+	<!--添加 床位费用 -->
+	<insert id="add_bed_Payment_message" parameterType="payment">
+	INSERT INTO payment (payment_id,patient_id,payment_name,sum_expenses,advance_payment_time,payment_category)
+	SELECT  substring(MD5(RAND()),1,5) AS payment_id,p.patient_id,"床位费",b.bed_expenses,#{start_time},"床位费"
+	FROM patient p,patient_message pm,bed b
+	WHERE p.patient_id = pm.patient_id AND b.bed_id = pm.bed_id
+	AND NOT EXISTS(
+	SELECT *
+	FROM payment pay,patient
+	WHERE 1=1
+	AND patient.patient_id = pay.patient_id
+	AND pay.advance_payment_time = #{start_time}
+	AND pay.payment_name = "床位费"
+	AND patient.patient_id = #{patient_id}
+	)
+	AND p.patient_id = #{patient_id}
+	AND UNIX_TIMESTAMP(pm.ruyuan_time) &lt; UNIX_TIMESTAMP(#{start_time})
+		
+	</insert>
+	
+	
+	<!--添加 检验费用 -->
+	<insert id="add_Inspection_Payment_message" parameterType="payment">
+	INSERT INTO payment (payment_id,patient_id,inspection_id,payment_name,sum_expenses,advance_payment_time,payment_category)
+	SELECT  substring(MD5(RAND()),1,5) AS payment_id ,moa.patient_id,i.inspection_id,ii.Inspection_item_name,ii.Inspection_item_pirce,TIMESTAMP(NOW()),"检验费"
+	FROM inspection i,inspection_item ii,medical_orders_list_action mola,medical_orders_action moa
+	WHERE i.inspection_item_id = ii.Inspection_item_id
+	AND i.medical_orders_list_action_id = mola.medical_orders_list_action_id
+	AND mola.medical_orders_action_id = moa.medical_orders_action_id
+	AND NOT EXISTS(
+	
+	SELECT *
+	FROM payment ,inspection
+	WHERE 1=1
+	AND payment.inspection_id = inspection.inspection_id
+	AND inspection.inspection_id = #{inspection_id}
+	)
+	AND i.inspection_id = #{inspection_id}
+		
+	</insert>
+	
+	
+	<resultMap type="payment" id="select_Singel_Patient_Advance_PaymentMap">
+   <id column="payment_id" property="payment_id"/>
+  <result column="patient_id" property="patient_id"/>
+  <result column="requisition_list_id" property="requisition_list_id"/>
+  <result column="payment_name" property="payment_name"/>
+  <result column="single_expenses" property="single_expenses"/>
+  <result column="sum_expenses" property="sum_expenses"/>
+  <result column="refunds" property="refunds"/>
+  <result column="advance_payment" property="advance_payment"/>
+  <result column="advance_payment_time" property="advance_payment_time"/>
+  <result column="payee" property="payee"/>
+  <result column="supplementary_payment" property="supplementary_payment"/>
+  <result column="settle_accounts" property="settle_accounts"/>
+  <result column="settle_accounts_time" property="settle_accounts_time"/>
+  <result column="payment_status" property="payment_status"/>
+  <result column="payment_category" property="payment_category"/>
+   <association property="user" javaType="zwf.po.User"  >
+    <id column="user_id" property="user_id"/>
+    	<result column="user_name" property="user_name"/>
+    </association>  
+   </resultMap>
+	<!--普通查询  -->
+	<select id="select_Singel_Patient_Advance_Payment" resultMap="select_Singel_Patient_Advance_PaymentMap" parameterType="Map">
+		SELECT *
+		FROM payment pay,user 
+		WHERE 1=1
+		AND user.user_work_id = pay.payee 
+		AND pay.patient_id = #{patient_id}
+		AND pay.advance_payment > 0
+		ORDER BY pay.advance_payment_time DESC
+		<if test="null != beginNumber and null != limit">
+  		LIMIT #{beginNumber},#{limit}
+  		</if>
+	</select>
+
+	<!--查询总数  -->
+	<select id="get_Singel_Patient_Advance_Payment" resultType="int">
+  		SELECT COUNT(1) 
+  		FROM payment pay
+		WHERE 1=1 
+		AND pay.patient_id = #{patient_id}
+		AND pay.advance_payment > 0
+		ORDER BY pay.advance_payment_time DESC		
+   </select>
+   
+   
+   <resultMap type="payment" id="select_Singel_Patient_medical_PaymentMap">
+   <id column="payment_id" property="payment_id"/>
+  <result column="patient_id" property="patient_id"/>
+  <result column="requisition_list_id" property="requisition_list_id"/>
+  <result column="payment_name" property="payment_name"/>
+  <result column="single_expenses" property="single_expenses"/>
+  <result column="sum_expenses" property="sum_expenses"/>
+  <result column="number" property="number"/>
+  <result column="refunds" property="refunds"/>
+  <result column="advance_payment" property="advance_payment"/>
+  <result column="advance_payment_time" property="advance_payment_time"/>
+  <result column="payee" property="payee"/>
+  <result column="supplementary_payment" property="supplementary_payment"/>
+  <result column="settle_accounts" property="settle_accounts"/>
+  <result column="settle_accounts_time" property="settle_accounts_time"/>
+  <result column="payment_status" property="payment_status"/> 
+   <association property="user" javaType="zwf.po.User"  >
+    <id column="user_id" property="user_id"/>
+    	<result column="user_name" property="user_name"/>
+    </association>
+    <association property="medicines" javaType="zwf.po.Medicines"  >
+    <id column="medicines_id" property="medicines_id"/>
+    	<result column="medicines_name" property="medicines_name"/>
+    	<result column="medicines_form" property="medicines_form"/>
+    	<result column="medicines_specification" property="medicines_specification"/>
+    	<result column="medicines_number" property="medicines_number"/>
+    	<result column="medicines_unit" property="medicines_unit"/>
+    	<result column="medicines_price" property="medicines_price"/>
+    	<result column="condition" property="condition"/>
+    </association>
+    <association property="requisition_List" javaType="zwf.po.Requisition_List"  >
+    <id column="requisition_list_id" property="requisition_list_id"/>
+	  <result column="requisition_id" property="requisition_id"/>
+	  <result column="medical_orders_id" property="medical_orders_id"/>
+	  <result column="medicined_id" property="medicined_id"/>
+	  <result column="number" property="number"/>
+	  <result column="pharmacist" property="pharmacist"/>
+	  <result column="check_requisition" property="check_requisition"/>
+	  <result column="take_requisition" property="take_requisition"/>
+	  <result column="take_requisition_time" property="take_requisition_time"/>
+	  <result column="check_requisition_time" property="check_requisition_time"/>
+   <result column="action_requisition_time" property="action_requisition_time"/>
+   </association>  
+   </resultMap>
+   <!--普通查询  -->
+	<select id="select_Singel_Patient_medical_Payment" resultMap="select_Singel_Patient_medical_PaymentMap" parameterType="Map">
+		SELECT *
+		FROM payment pay,requisition_list reql,medicines m,user u
+		WHERE 1=1
+		AND reql.requisition_list_id = pay.requisition_list_id
+		AND reql.medicined_id = m.medicines_id
+		AND u.user_work_id = pay.payee 
+		AND pay.patient_id = #{patient_id}
+		AND pay.sum_expenses > 0
+		ORDER BY pay.advance_payment_time DESC
+		<if test="null != beginNumber and null != limit">
+  		LIMIT #{beginNumber},#{limit}
+  		</if>
+	</select>
+
+	<!--查询总数  -->
+	<select id="get_Singel_Patient_medical_Payment" resultType="int">
+  		SELECT COUNT(1) 
+  		FROM payment pay
+		WHERE 1=1 
+		AND pay.patient_id = #{patient_id}
+		AND pay.sum_expenses > 0
+		ORDER BY pay.advance_payment_time DESC		
+   </select>
+   
+    <resultMap type="payment" id="select_Singel_Patient_condiction_PaymentMap">
+   <id column="payment_id" property="payment_id"/>
+  <result column="patient_id" property="patient_id"/>
+  <result column="requisition_list_id" property="requisition_list_id"/>
+  <result column="payment_name" property="payment_name"/>
+  <result column="single_expenses" property="single_expenses"/>
+  <result column="sum_expenses" property="sum_expenses"/>
+  <result column="number" property="number"/>
+  <result column="refunds" property="refunds"/>
+  <result column="advance_payment" property="advance_payment"/>
+  <result column="advance_payment_time" property="advance_payment_time"/>
+  <result column="payee" property="payee"/>
+  <result column="supplementary_payment" property="supplementary_payment"/>
+  <result column="settle_accounts" property="settle_accounts"/>
+  <result column="settle_accounts_time" property="settle_accounts_time"/>
+  <result column="payment_status" property="payment_status"/> 
+   <association property="user" javaType="zwf.po.User"  >
+    <id column="user_id" property="user_id"/>
+    	<result column="user_name" property="user_name"/>
+    </association>
+    <association property="medicines" javaType="zwf.po.Medicines"  >
+    <id column="medicines_id" property="medicines_id"/>
+    	<result column="medicines_name" property="medicines_name"/>
+    	<result column="medicines_form" property="medicines_form"/>
+    	<result column="medicines_specification" property="medicines_specification"/>
+    	<result column="medicines_number" property="medicines_number"/>
+    	<result column="medicines_unit" property="medicines_unit"/>
+    	<result column="medicines_price" property="medicines_price"/>
+    	<result column="condition" property="condition"/>
+    </association>
+    <association property="requisition_List" javaType="zwf.po.Requisition_List"  >
+    <id column="requisition_list_id" property="requisition_list_id"/>
+	  <result column="requisition_id" property="requisition_id"/>
+	  <result column="medical_orders_id" property="medical_orders_id"/>
+	  <result column="medicined_id" property="medicined_id"/>
+	  <result column="number" property="number"/>
+	  <result column="pharmacist" property="pharmacist"/>
+	  <result column="check_requisition" property="check_requisition"/>
+	  <result column="take_requisition" property="take_requisition"/>
+	  <result column="take_requisition_time" property="take_requisition_time"/>
+	  <result column="check_requisition_time" property="check_requisition_time"/>
+   <result column="action_requisition_time" property="action_requisition_time"/>
+   </association>  
+   </resultMap>
+   <!--普通查询  -->
+	<select id="select_Singel_Patient_condiction_Payment" resultMap="select_Singel_Patient_condiction_PaymentMap" parameterType="Map">
+		SELECT *
+		FROM payment pay,requisition_list reql,medicines m,user u
+		WHERE 1=1
+		AND reql.requisition_list_id = pay.requisition_list_id
+		AND reql.medicined_id = m.medicines_id
+		AND u.user_work_id = pay.payee 
+		AND pay.patient_id = #{patient_id}
+		AND pay.sum_expenses > 0
+		<if test="payment_name!=null and payment_name!=''">AND pay.payment_name like CONCAT('%','${payment_name}','%')</if>
+		<if test="start_time!=null and end_time!=null ">AND pay.advance_payment_time BETWEEN '${start_time}' AND '${end_time}'</if>
+		ORDER BY pay.advance_payment_time DESC
+		<if test="null != beginNumber and null != limit">
+  		LIMIT #{beginNumber},#{limit}
+  		</if>
+	</select>
+
+	<!--查询总数  -->
+	<select id="get_Singel_Patient_condiction_Payment" resultType="int">
+  		SELECT COUNT(1) 
+  		FROM payment pay
+		WHERE 1=1 
+		AND pay.patient_id = #{patient_id}
+		AND pay.sum_expenses > 0
+		<if test="payment_name!=null and payment_name!=''">AND pay.payment_name like CONCAT('%','${payment_name}','%')</if>
+		<if test="start_time!=null and end_time!=null ">AND pay.advance_payment_time BETWEEN '${start_time}' AND '${end_time}'</if>
+		ORDER BY pay.advance_payment_time DESC		
+   </select>
+   <!-- FN6920 -->
+   <resultMap type="payment" id="select_one_PaymentMap">
+   <id column="payment_id" property="payment_id"/>
+  <result column="patient_id" property="patient_id"/>
+  <result column="requisition_list_id" property="requisition_list_id"/>
+  <result column="payment_name" property="payment_name"/>
+  <result column="single_expenses" property="single_expenses"/>
+  <result column="sum_expenses" property="sum_expenses"/>
+  <result column="refunds" property="refunds"/>
+  <result column="advance_payment" property="advance_payment"/>
+  <result column="advance_payment_time" property="advance_payment_time"/>
+  <result column="payee" property="payee"/>
+  <result column="supplementary_payment" property="supplementary_payment"/>
+  <result column="settle_accounts" property="settle_accounts"/>
+  <result column="settle_accounts_time" property="settle_accounts_time"/>
+  <result column="payment_status" property="payment_status"/> 
+   <association property="user" javaType="zwf.po.User"  >
+    <id column="user_id" property="user_id"/>
+    	<result column="user_name" property="user_name"/>
+    </association>
+    <association property="patient" javaType="zwf.po.Patient"  >
+   	<id column="patient_id" property="patient_id"/>
+   	<result column="brith_day" property="brith_day"/>
+   	<result column="patient_name" property="patient_name"/>
+    <result column="marital_state" property="marital_state"/>
+    <result column="patient_meal" property="patient_meal"/>
+    <result column="brith_place" property="brith_place"/>
+    <result column="id_number" property="id_number"/>
+    <result column="phone" property="phone"/>
+    <result column="age" property="age"/>
+    <result column="apatient_name" property="apatient_name"/>
+    <result column="aphone" property="aphone"/>
+    <result column="relation" property="relation"/>
+     <result column="insurance" property="insurance"/>
+   </association>  
+   </resultMap>
+   <select id="select_one_Payment" resultMap="select_one_PaymentMap" parameterType="Map">
+		SELECT *
+		FROM payment pay,user u,patient p 
+		WHERE 1=1
+		AND u.user_work_id = pay.payee
+		AND p.patient_id = pay.patient_id
+		AND pay.payment_id = #{payment_id} 
+		
+	</select>
+	
+	
+	<resultMap type="payment" id="select_Patient_PaymentMap">
+   <id column="payment_id" property="payment_id"/>
+  <result column="patient_id" property="patient_id"/>
+  <result column="requisition_list_id" property="requisition_list_id"/>
+  <result column="payment_name" property="payment_name"/>
+  <result column="single_expenses" property="single_expenses"/>
+  <result column="sum_expenses" property="sum_expenses"/>
+  <result column="number" property="number"/>
+  <result column="refunds" property="refunds"/>
+  <result column="advance_payment" property="advance_payment"/>
+  <result column="advance_payment_time" property="advance_payment_time"/>
+  <result column="payee" property="payee"/>
+  <result column="supplementary_payment" property="supplementary_payment"/>
+  <result column="settle_accounts" property="settle_accounts"/>
+  <result column="settle_accounts_time" property="settle_accounts_time"/>
+  <result column="payment_status" property="payment_status"/> 
+   <association property="user" javaType="zwf.po.User"  >
+    <id column="user_id" property="user_id"/>
+    	<result column="user_name" property="user_name"/>
+    </association>
+    <association property="medicines" javaType="zwf.po.Medicines"  >
+    <id column="medicines_id" property="medicines_id"/>
+    	<result column="medicines_name" property="medicines_name"/>
+    	<result column="medicines_form" property="medicines_form"/>
+    	<result column="medicines_specification" property="medicines_specification"/>
+    	<result column="medicines_number" property="medicines_number"/>
+    	<result column="medicines_unit" property="medicines_unit"/>
+    	<result column="medicines_price" property="medicines_price"/>
+    	<result column="condition" property="condition"/>
+    </association>
+    <association property="requisition_List" javaType="zwf.po.Requisition_List"  >
+    <id column="requisition_list_id" property="requisition_list_id"/>
+	  <result column="requisition_id" property="requisition_id"/>
+	  <result column="medical_orders_id" property="medical_orders_id"/>
+	  <result column="medicined_id" property="medicined_id"/>
+	  <result column="number" property="number"/>
+	  <result column="pharmacist" property="pharmacist"/>
+	  <result column="check_requisition" property="check_requisition"/>
+	  <result column="take_requisition" property="take_requisition"/>
+	  <result column="take_requisition_time" property="take_requisition_time"/>
+	  <result column="check_requisition_time" property="check_requisition_time"/>
+   <result column="action_requisition_time" property="action_requisition_time"/>
+   </association>  
+   </resultMap>
+   <!--普通查询  -->
+	<select id="select_Patient_Payment" resultMap="select_Patient_PaymentMap" parameterType="Map">
+		SELECT *
+		FROM payment pay LEFT JOIN requisition_list reql ON reql.requisition_list_id = pay.requisition_list_id
+		LEFT JOIN medicines m ON reql.medicined_id = m.medicines_id
+		LEFT JOIN user u ON u.user_work_id = pay.payee 
+		WHERE 1=1
+		AND pay.sum_expenses>0
+		AND pay.patient_id = #{patient_id}
+		ORDER BY pay.advance_payment_time DESC 
+		<if test="null != beginNumber and null != limit">
+  		LIMIT #{beginNumber},#{limit}
+  		</if>
+	</select>
+
+	<!--查询总数  -->
+	<select id="get_select_Patient_Payment" resultType="int">
+  		SELECT COUNT(1) 
+  		FROM payment pay LEFT JOIN requisition_list reql ON reql.requisition_list_id = pay.requisition_list_id
+		LEFT JOIN medicines m ON reql.medicined_id = m.medicines_id
+		LEFT JOIN user u ON u.user_work_id = pay.payee 
+		WHERE 1=1
+		AND pay.sum_expenses>0
+		AND pay.patient_id = #{patient_id}
+		ORDER BY pay.advance_payment_time DESC		
+   </select>
+   
+   <!--更新  -->
+	<update id="zuofri_Payment_message" parameterType="payment">
+	update payment
+	<set>	 
+	 
+	 payment_status = 1
+	 
+	</set>
+	where payment_id=#{payment_id}
+	</update>
+   
+   <resultMap type="payment" id="select_Singel_Patient_other_PaymentMap">
+   <id column="payment_id" property="payment_id"/>
+  <result column="patient_id" property="patient_id"/>
+  <result column="requisition_list_id" property="requisition_list_id"/>
+  <result column="payment_name" property="payment_name"/>
+  <result column="single_expenses" property="single_expenses"/>
+  <result column="sum_expenses" property="sum_expenses"/>
+  <result column="refunds" property="refunds"/>
+  <result column="advance_payment" property="advance_payment"/>
+  <result column="advance_payment_time" property="advance_payment_time"/>
+  <result column="payee" property="payee"/>
+  <result column="supplementary_payment" property="supplementary_payment"/>
+  <result column="settle_accounts" property="settle_accounts"/>
+  <result column="settle_accounts_time" property="settle_accounts_time"/>
+  <result column="payment_status" property="payment_status"/>
+  <result column="payment_category" property="payment_category"/>
+   <association property="user" javaType="zwf.po.User"  >
+    <id column="user_id" property="user_id"/>
+    	<result column="user_name" property="user_name"/>
+    </association>  
+   </resultMap>
+	<!--普通查询  -->
+	<select id="select_Singel_Patient_other_Payment" resultMap="select_Singel_Patient_other_PaymentMap" parameterType="Map">
+		SELECT *
+		FROM payment pay 
+		LEFT JOIN `user` ON user.user_work_id = pay.payee 
+		WHERE 1=1
+		AND pay.patient_id = #{patient_id}
+		AND pay.payment_category <![CDATA[ <> ]]> "预交金"
+		<if test="payment_category!=null and payment_category!=''">AND pay.payment_category = #{payment_category} </if>
+		<if test="start_time!=null and end_time!=null ">AND pay.advance_payment_time BETWEEN '${start_time}' AND '${end_time}'</if>
+		ORDER BY pay.advance_payment_time DESC
+		<if test="null != beginNumber and null != limit">
+  		LIMIT #{beginNumber},#{limit}
+  		</if>
+	</select>
+
+	<!--查询总数  -->
+	<select id="get_Singel_Patient_other_Payment" resultType="int">
+  		SELECT COUNT(1)
+  		FROM payment pay  
+  		LEFT JOIN `user` ON user.user_work_id = pay.payee 
+		WHERE 1=1
+		AND pay.patient_id = #{patient_id}
+		AND pay.payment_category <![CDATA[ <> ]]> "预交金"
+		<if test="payment_category!=null and payment_category!=''">AND pay.payment_category = #{payment_category} </if>
+		<if test="start_time!=null and end_time!=null ">AND pay.advance_payment_time BETWEEN '${start_time}' AND '${end_time}'</if>
+		ORDER BY pay.advance_payment_time DESC		
+   </select>
+   
+   
+    <resultMap type="payment" id="select_Singel_Patient_today_PaymentMap">
+   <id column="payment_id" property="payment_id"/>
+  <result column="patient_id" property="patient_id"/>
+  <result column="requisition_list_id" property="requisition_list_id"/>
+  <result column="payment_name" property="payment_name"/>
+  <result column="single_expenses" property="single_expenses"/>
+  <result column="sum_expenses" property="sum_expenses"/>
+  <result column="refunds" property="refunds"/>
+  <result column="advance_payment" property="advance_payment"/>
+  <result column="advance_payment_time" property="advance_payment_time"/>
+  <result column="payee" property="payee"/>
+  <result column="supplementary_payment" property="supplementary_payment"/>
+  <result column="settle_accounts" property="settle_accounts"/>
+  <result column="settle_accounts_time" property="settle_accounts_time"/>
+  <result column="payment_status" property="payment_status"/>
+  <result column="payment_category" property="payment_category"/>
+   <association property="user" javaType="zwf.po.User"  >
+    <id column="user_id" property="user_id"/>
+    	<result column="user_name" property="user_name"/>
+    </association>  
+   </resultMap>
+	<!--普通查询  -->
+	<select id="select_Singel_Patient_today_Payment" resultMap="select_Singel_Patient_today_PaymentMap" parameterType="Map">
+		SELECT *
+		FROM payment pay 
+		LEFT JOIN `user` ON user.user_work_id = pay.payee 
+		WHERE 1=1
+		AND pay.patient_id = #{patient_id}
+		AND pay.payment_category <![CDATA[ <> ]]> "预交金"
+		AND pay.advance_payment_time BETWEEN '${start_time}' AND '${end_time}'
+		ORDER BY  pay.payment_status ASC ,  pay.payment_category DESC
+		<if test="null != beginNumber and null != limit">
+  		LIMIT #{beginNumber},#{limit}
+  		</if>
+	</select>
+
+	<!--查询总数  -->
+	<select id="get_Singel_Patient_today_Payment" resultType="int">
+		SELECT COUNT(1)
+		FROM payment pay 
+		LEFT JOIN `user` ON user.user_work_id = pay.payee 
+		WHERE 1=1
+		AND pay.patient_id = "WID984"
+		AND pay.payment_category <![CDATA[ <> ]]>  "预交金"
+		AND pay.advance_payment_time BETWEEN '${start_time}' AND '${end_time}'
+		ORDER BY pay.payment_category DESC		
+   </select>
+   
+   <update id="jiesuan_Payment" parameterType="payment">
+	update payment
+	<set>	 
+	 
+	 payee = #{payee},
+	 
+	 settle_accounts_time = #{settle_accounts_time},
+	 
+	 payment_status = 1,
+	 
+	</set>
+	where payment_id in (${select_id}) AND payment_status = 0
+	</update>
+   
+   <delete id="delete_medical_Payment_message" parameterType="String">
+		delete from payment where requisition_list_id in (${select_id}) and payment_category = "药品费" 
+		and payment_status = 0
+	</delete>
+	
+	<update id="update_medical_Payment_message" parameterType="payment">
+	update payment
+	<set>	 
+	 
+	 payee = #{payee},
+	 
+	 settle_accounts_time = #{settle_accounts_time},
+	 	 
+	 payment_status = 2,
+	 
+	</set>
+	where requisition_list_id in (${select_id}) AND payment_status = 1
+	</update>
+	
+	<update id="update_chongjian_Payment" parameterType="payment">
+	update payment
+	<set>	 
+	 
+	 payee = #{payee},
+	 
+	 settle_accounts_time = #{settle_accounts_time},
+	 	 
+	 payment_status = 3,
+	 
+	</set>
+	where payment_id in (${select_id}) AND payment_status = 2
+	</update>
+	
+   
+</mapper>

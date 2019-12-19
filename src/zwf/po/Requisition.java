@@ -1,0 +1,163 @@
+package zwf.po;
+
+import java.sql.Timestamp;
+
+public class Requisition {
+	
+	private Integer requisition_id;
+	private String patient_id;
+	private Timestamp start_time;
+	private String nurse_id;
+	private Integer check_state;
+	private Double sum_advance_payment;
+	private Double sum_price;
+	private Double after_expenses;
+	private Integer role_id;
+	
+	private Patient patient;
+	private Patient_message patient_message;
+	private Bed bed;
+	private Room room;
+	private Deparment deparment;
+	private User user;
+	private Payment payment;
+	public Integer getRequisition_id() {
+		return requisition_id;
+	}
+	public void setRequisition_id(Integer requisition_id) {
+		this.requisition_id = requisition_id;
+	}
+	public String getPatient_id() {
+		return patient_id;
+	}
+	public void setPatient_id(String patient_id) {
+		this.patient_id = patient_id;
+	}
+	public Timestamp getStart_time() {
+		return start_time;
+	}
+	public void setStart_time(Timestamp start_time) {
+		this.start_time = start_time;
+	}
+	public String getNurse_id() {
+		return nurse_id;
+	}
+	public void setNurse_id(String nurse_id) {
+		this.nurse_id = nurse_id;
+	}
+	public Integer getCheck_state() {
+		return check_state;
+	}
+	public void setCheck_state(Integer check_state) {
+		this.check_state = check_state;
+	}
+	public Double getSum_advance_payment() {
+		return sum_advance_payment;
+	}
+	public void setSum_advance_payment(Double sum_advance_payment) {
+		this.sum_advance_payment = sum_advance_payment;
+	}
+	public Double getSum_price() {
+		return sum_price;
+	}
+	public void setSum_price(Double sum_price) {
+		this.sum_price = sum_price;
+	}
+	public Double getAfter_expenses() {
+		return after_expenses;
+	}
+	public void setAfter_expenses(Double after_expenses) {
+		this.after_expenses = after_expenses;
+	}
+	public Integer getRole_id() {
+		return role_id;
+	}
+	public void setRole_id(Integer role_id) {
+		this.role_id = role_id;
+	}
+	public Patient getPatient() {
+		return patient;
+	}
+	public void setPatient(Patient patient) {
+		this.patient = patient;
+	}
+	public Patient_message getPatient_message() {
+		return patient_message;
+	}
+	public void setPatient_message(Patient_message patient_message) {
+		this.patient_message = patient_message;
+	}
+	public Bed getBed() {
+		return bed;
+	}
+	public void setBed(Bed bed) {
+		this.bed = bed;
+	}
+	public Room getRoom() {
+		return room;
+	}
+	public void setRoom(Room room) {
+		this.room = room;
+	}
+	public Deparment getDeparment() {
+		return deparment;
+	}
+	public void setDeparment(Deparment deparment) {
+		this.deparment = deparment;
+	}
+	public User getUser() {
+		return user;
+	}
+	public void setUser(User user) {
+		this.user = user;
+	}
+	public Payment getPayment() {
+		return payment;
+	}
+	public void setPayment(Payment payment) {
+		this.payment = payment;
+	}
+	public Requisition(Integer requisition_id, String patient_id,
+			Timestamp start_time, String nurse_id, Integer check_state,
+			Double sum_advance_payment, Double sum_price,
+			Double after_expenses, Integer role_id, Patient patient,
+			Patient_message patient_message, Bed bed, Room room,
+			Deparment deparment, User user, Payment payment) {
+		super();
+		this.requisition_id = requisition_id;
+		this.patient_id = patient_id;
+		this.start_time = start_time;
+		this.nurse_id = nurse_id;
+		this.check_state = check_state;
+		this.sum_advance_payment = sum_advance_payment;
+		this.sum_price = sum_price;
+		this.after_expenses = after_expenses;
+		this.role_id = role_id;
+		this.patient = patient;
+		this.patient_message = patient_message;
+		this.bed = bed;
+		this.room = room;
+		this.deparment = deparment;
+		this.user = user;
+		this.payment = payment;
+	}
+	public Requisition() {
+		super();
+		// TODO Auto-generated constructor stub
+	}
+	@Override
+	public String toString() {
+		return "Requisition [requisition_id=" + requisition_id
+				+ ", patient_id=" + patient_id + ", start_time=" + start_time
+				+ ", nurse_id=" + nurse_id + ", check_state=" + check_state
+				+ ", sum_advance_payment=" + sum_advance_payment
+				+ ", sum_price=" + sum_price + ", after_expenses="
+				+ after_expenses + ", role_id=" + role_id + ", patient="
+				+ patient + ", patient_message=" + patient_message + ", bed="
+				+ bed + ", room=" + room + ", deparment=" + deparment
+				+ ", user=" + user + ", payment=" + payment + "]";
+	}
+	
+	
+	
+}

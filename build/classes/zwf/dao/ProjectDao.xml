@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="zwf.dao.ProjectDao">
+
+	
+	<!--查询  -->
+	<select id="selectproject" resultType="project" parameterType="Map">
+		SELECT *
+		FROM project
+		WHERE 1=1 
+		<if test="project_category >0 "  >
+		AND project_category = #{project_category} 
+		</if>
+		<if test="condition !=null "  >
+		AND (project_py like CONCAT('%','${condition}','%') OR project_name like CONCAT('%','${condition}','%'))
+		</if>
+	</select> 
+	
+	<select id="gstCountproject" resultType="int">
+  		SELECT COUNT(1) 
+  		FROM project
+  		WHERE project_py like CONCAT('%','${condition}','%') OR project_name like CONCAT('%','${condition}','%')
+   </select>
+   
+   
+   
+   
+   
+   
+</mapper>

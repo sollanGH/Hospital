@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="zwf.dao.StorageDao">
+
+	
+	
+	<!--添加  -->
+	<insert id="addStroage" parameterType="Storage">
+	insert into storage(storage_location,storage_type,storage_id,storage_supply,storage_check_pharmacist,storage_check_date,storage_date,storage_make_pharmacist,storage_price)
+	values(#{storage_location},#{storage_type},#{storage_id},#{storage_supply},#{storage_check_pharmacist},#{storage_check_date},#{storage_date},#{storage_make_pharmacist},#{storage_price})
+	</insert>
+	
+	<!--更新  -->
+	 <update id="actionStroage" parameterType="Storage">
+	update `storage` s ,storage_list sl , medicines m
+	<set>
+	 s.storage_status = 1,
+	 m.medicines_number = m.medicines_number + sl.storage_number,
+	 s.storage_check_date = #{storage_check_date},
+	 s.storage_check_pharmacist = #{storage_check_pharmacist},
+	 
+	</set>
+	where s.storage_id=#{select_id}
+	AND s.storage_id = sl.storage_id 
+	AND sl.medicines_id = m.medicines_id
+	AND s.storage_status = 0
+	</update> 
+	
+	
+	
+	 <update id="zuofei1Stroage" parameterType="Storage">
+	update `storage` s ,storage_list sl , medicines m
+	<set>
+	 s.storage_status = 2,
+	 m.medicines_number = m.medicines_number - sl.storage_number,
+	</set>
+	where s.storage_id=#{select_id}
+	AND s.storage_id = sl.storage_id 
+	AND sl.medicines_id = m.medicines_id
+	AND s.storage_status = 1
+	</update> 
+	
+	
+	 <update id="zuofei2Stroage" parameterType="Storage">
+	update `storage` s 
+	<set>
+	 s.storage_status = 2, 
+	</set>
+	where s.storage_id=#{select_id}
+	AND s.storage_status = 0
+	</update> 
+	
+	<!--查询  -->
+	
+	
+	
+	
+	 <resultMap type="Storage" id="selectStorageMap">
+   <id column="storage_id" property="storage_id"/>
+  <result column="storage_check_pharmacist" property="storage_check_pharmacist"/>
+  <result column="storage_check_date" property="storage_check_date"/>
+  <result column="storage_date" property="storage_date"/>
+  <result column="storage_make_pharmacist" property="storage_make_pharmacist"/>
+  <result column="storage_price" property="storage_price"/>
+  <result column="storage_status" property="storage_status"/>
+  <result column="storage_location" property="storage_location"/>
+  <result column="storage_type" property="storage_type"/>
+  <result column="sum_price" property="sum_price"/>
+  <association property="storage_list" javaType="zwf.po.Storage_list"  >
+    <id column="storage_list_id" property="storage_list_id"/>
+    	<result column="storage_supply1" property="storage_supply"/>
+    </association>
+  <association property="user" javaType="zwf.po.User"  >
+    <id column="user_id" property="user_id"/>
+    	<result column="name1" property="user_name"/>
+    </association>
+    <association property="user1" javaType="zwf.po.User"  >
+    <id column="u1_id" property="user_id"/>
+    	<result column="name2" property="user_name"/>
+    </association>
+   </resultMap>
+	<!--普通查询  -->
+	<select id="selectStorage" resultMap="selectStorageMap" parameterType="Map">
+		SELECT sl.storage_supply as storage_supply1,s.*,u1.user_id as u1_id, u1.user_name AS name1,u2.user_name AS name2,sl.*,SUM(sl.storage_price) AS sum_price
+		FROM storage s
+		LEFT JOIN storage_list sl ON sl.storage_id = s.storage_id
+		LEFT JOIN `user` u1 ON s.storage_check_pharmacist = u1.user_work_id
+		LEFT JOIN `user` u2 ON s.storage_make_pharmacist = u2.user_work_id  
+		WHERE 1=1
+		
+		<if test="storage_status!=null ">AND s.storage_status = #{storage_status}</if>
+		<if test="start_time!=null and end_time!=null ">AND s.storage_date BETWEEN '${start_time}' AND '${end_time}'</if> 
+		<if test="null != beginNumber and null != limit">
+  		GROUP BY s.storage_id
+		ORDER BY s.storage_date DESC
+  		LIMIT #{beginNumber},#{limit}
+  		</if>
+	</select>
+
+	<!--查询总数  -->
+	<select id="getCountStorage" resultType="int">
+  		SELECT COUNT(1) 
+  		FROM storage
+		WHERE 1=1 
+		
+   </select>
+   
+
+   
+</mapper>

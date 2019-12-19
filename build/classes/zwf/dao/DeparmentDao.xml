@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="zwf.dao.DeparmentDao">
+
+	
+	
+	<!--添加  -->
+	<insert id="addDeparment" parameterType="deparment">
+	insert into deparment(deparment_name,deparment_location,deparment_description,description_create_time)
+	values(#{deparment_name},#{deparment_location},#{deparment_description},#{description_create_time})
+	</insert>
+	
+	<!--更新  -->
+	<update id="updateDeparment" parameterType="deparment">
+	update deparment
+	<set>
+	 <if test="deparment_name!=null">
+	 	deparment_name=#{deparment_name},
+	 </if>
+	 <if test="deparment_location!=null">
+	 	deparment_location=#{deparment_location},
+	 </if>
+	 <if test="deparment_description!=null">
+	 	deparment_description=#{deparment_description},
+	 </if>
+	 <if test="description_create_time!=null">
+	 	description_create_time=#{description_create_time},
+	 </if>
+	</set>
+	where deparment_id=#{deparment_id}
+	</update>
+	
+	<!--查询  -->
+	<select id="selectAllDeparment" resultType="Deparment" parameterType="Map">
+		SELECT *
+		FROM deparment
+		<if test="null != beginNumber and null != limit">
+  		LIMIT #{beginNumber},#{limit}
+  		</if>
+	</select> 
+	
+	<!--下拉框中的所有科室名  -->
+	<select id="selectDeparment" resultType="Deparment" parameterType="Map">
+		SELECT deparment_name,deparment_id,deparment_description
+		FROM deparment
+		<if test=" null != limit">
+  		LIMIT #{limit}
+  		</if>
+	</select> 
+	
+	
+	<!--测试对应id的科室信息  -->
+	<select id="selectDeparmentid" resultType="Deparment" parameterType="Map">
+		SELECT deparment_name,deparment_id,deparment_description
+		FROM deparment
+		
+  		where deparment_id=#{deparment_id}
+  		
+	</select> 
+	
+	
+	<!--科室总数  -->
+	 <select id="getCountDeparment" resultType="int">
+  		SELECT COUNT(1) 
+  		FROM deparment 
+   </select>
+   
+   <delete id="deleteDeparment" parameterType="String">
+		delete from deparment where deparment_id in (${deparment_id})
+	</delete>
+   
+   
+   
+   <!--一对多  -->
+   <resultMap type="Deparment" id="deparmentMaps">
+   <id column="deparment_id" property="deparment_id"/>
+  <result column="deparment_name" property="deparment_name"/>
+  <result column="room_name" property="room_name"/>
+   <collection property="rooms" ofType="Room"  >
+   	<id column="room_id" property="room_id"/>
+   	<result column="room_name" property="room_name"/>
+   	<result column="bed_num" property="bed_num"/>
+    <result column="r_d_id" property="deparment_id"/>
+    <result column="principal" property="principal"/>
+    <result column="ruyuan_num" property="ruyuan_num"/>
+    <result column="chuyuan_num" property="chuyuan_num"/>
+    <result column="empty_beds" property="empty_beds"/>
+    <result column="duty_officers_id" property="duty_officers_id"/>
+   </collection>
+   </resultMap>
+   
+   <select id="getAllDeparment" parameterType="Map" resultMap="deparmentMaps">
+   SELECT
+   		 d.deparment_id,
+   		 d.deparment_name,
+   		 r.room_id,
+   		 r.deparment_id  r_id,
+   		 r.room_name,
+   		 r.principal,
+   		 r.ruyuan_num,
+   		 r.chuyuan_num,
+   		 r.duty_officers_id
+   FROM
+   		 deparment d,room r
+   		 
+   WHERE 	d.deparment_id = r.deparment_id	 
+   </select>
+   
+   
+   
+   
+   
+   
+   
+</mapper>

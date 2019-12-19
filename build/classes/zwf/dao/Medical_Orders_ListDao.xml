@@ -1,0 +1,827 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="zwf.dao.Medical_Orders_ListDao">
+
+	
+	<!--查询单个病人的临时医嘱详情  -->
+	<resultMap type="Medical_Orders_List" id="Medical_Orders_ListDaoMap">
+   <id column="medical_orders_list_id" property="medical_orders_list_id"/>
+  <result column="medical_orders_id" property="medical_orders_id"/>
+  <result column="group_list" property="group"/>
+  <result column="speed" property="speed"/>
+  <result column="number" property="number"/>
+  <result column="sum_number" property="sum_number"/>
+  <result column="types" property="types"/>
+  <result column="ways" property="ways"/>
+  <result column="direction" property="direction"/>
+  <result column="start_time" property="start_time"/>
+  <result column="doctor_id" property="doctor_id"/>
+  <result column="start_status" property="start_status"/>
+  <result column="nurse_id" property="nurse_id"/>
+  <result column="check_status" property="check_status"/>
+  <result column="check_time" property="check_time"/>
+  <result column="action_status" property="action_status"/>
+  <result column="action_time" property="action_time"/>
+  <result column="medical_orders_list_type" property="medical_orders_list_type"/>
+   <association property="medical_Orders" javaType="zwf.po.Medical_Orders"  >
+   	<id column="medical_orders_id" property="medical_orders_id"/>
+   	<result column="start_time" property="start_time"/>
+   	<result column="doctor_id" property="doctor_id"/>
+   	<result column="check_state" property="check_state"/>
+   </association>
+    <association property="medicines" javaType="zwf.po.Medicines"  >
+    <id column="medicines_id" property="medicines_id"/>
+    	<result column="medicines_name" property="medicines_name"/>
+    	<result column="medicines_form" property="medicines_form"/>
+    	<result column="medicines_specification" property="medicines_specification"/>
+    	<result column="medicines_number" property="medicines_number"/>
+    	<result column="medicines_unit" property="medicines_unit"/>
+    	<result column="medicines_price" property="medicines_price"/>
+    	<result column="condition" property="condition"/>
+    </association>
+    <association property="project" javaType="zwf.po.Project"  >
+    <id column="project_id" property="project_id"/>
+    	<result column="project_name" property="project_name"/>
+    	<result column="project_unit" property="project_unit"/>
+    	<result column="project_price" property="project_price"/>
+    </association>
+    <association property="inspection_item" javaType="zwf.po.Inspection_item"  >
+    <id column="Inspection_item_id" property="Inspection_item_id"/>
+    	<result column="Inspection_item_name" property="Inspection_item_name"/>
+    	<result column="Inspection_item_unit" property="Inspection_item_unit"/>
+    	<result column="Inspection_item_pirce" property="Inspection_item_pirce"/>
+    </association>
+    <association property="patient" javaType="zwf.po.Patient"  >
+    <id column="patient_id" property="patient_id"/>
+    	<result column="patient_name" property="patient_name"/>
+    </association>
+   <association property="user" javaType="zwf.po.User"  >
+    <id column="user_id" property="user_id"/>
+    	<result column="doctor_name" property="user_name"/>
+    </association>
+    <association property="user1" javaType="zwf.po.User"  >
+    <id column="u1_id" property="user_id"/>
+    	<result column="nurse_name" property="user_name"/>
+    </association>
+   </resultMap>
+	
+	
+	<select id="selectMedical_Orders_List" resultMap="Medical_Orders_ListDaoMap" parameterType="Map">
+		<!-- SELECT p.patient_name,mol.*,m.*
+		FROM medical_orders_list mol LEFT JOIN medical_orders mo 
+		ON mo.medical_orders_id = mol.medical_orders_id
+		LEFT JOIN medicines m ON m.medicines_id = mol.medicined_id 
+		LEFT JOIN patient p ON p.patient_id = #{medical_orders_id}	 -->
+		<!-- WHERE medical_orders_id = #{medical_orders_id} -->
+		
+		
+		<!-- SELECT u.user_name,p.patient_name,mol.*,m.*,mo.*
+		FROM medical_orders mo,patient p,medical_orders_list mol,medicines m,`user` u
+		WHERE p.patient_id = #{patient_id} AND mo.medical_orders_id = mol.medical_orders_id AND m.medicines_id = mol.medicined_id
+		AND p.patient_id = mo.patient_id  AND u.user_work_id = mol.doctor_id
+		ORDER BY  mol.start_time DESC,mol.group_list ASC -->
+		SELECT ii.*,pro.*,p.patient_name,mol.*,m.*,u1.user_id as u1_id, u1.user_name AS doctor_name,u2.user_name AS nurse_name
+		FROM medical_orders_list mol LEFT JOIN medical_orders mo 	ON mo.medical_orders_id = mol.medical_orders_id
+		LEFT JOIN medicines m ON (m.medicines_id = mol.medicined_id AND mol.types = m.types)
+	    LEFT JOIN project pro ON( pro.project_id = mol.project_id AND mol.types = pro.types) 
+	    LEFT JOIN inspection_item ii ON( ii.Inspection_item_id = mol.Inspection_item_id AND mol.types = ii.types) 
+		LEFT JOIN patient p ON p.patient_id = mo.patient_id
+		LEFT JOIN `user` u1 ON mol.doctor_id = u1.user_work_id
+		LEFT JOIN `user` u2 ON mol.nurse_id = u2.user_work_id 
+    	WHERE 1=1
+    	AND mol.medical_orders_list_type = 1
+		AND p.patient_id =  #{patient_id} 
+		ORDER BY  mol.start_status,mol.start_time DESC,mol.group_list ASC
+		
+		<if test="null != beginNumber and null != limit">
+  		LIMIT #{beginNumber},#{limit}
+  		</if>
+	</select> 
+	
+	<!--查询单个病人的长期医嘱详情  -->
+	<resultMap type="Medical_Orders_List" id="selectMedical_Orders_List_LongMap">
+   <id column="medical_orders_list_id" property="medical_orders_list_id"/>
+  <result column="medical_orders_id" property="medical_orders_id"/>
+  <result column="group_list" property="group"/>
+  <result column="speed" property="speed"/>
+  <result column="number" property="number"/>
+  <result column="sum_number" property="sum_number"/>
+  <result column="types" property="types"/>
+  <result column="ways" property="ways"/>
+  <result column="direction" property="direction"/>
+  <result column="start_time" property="start_time"/>
+  <result column="end_time" property="end_time"/>
+  <result column="doctor_id" property="doctor_id"/>
+  <result column="start_status" property="start_status"/>
+  <result column="nurse_id" property="nurse_id"/>
+  <result column="check_status" property="check_status"/>
+  <result column="check_time" property="check_time"/>
+  <result column="action_status" property="action_status"/>
+  <result column="action_time" property="action_time"/>
+  <result column="medical_orders_list_type" property="medical_orders_list_type"/>
+   <association property="medical_Orders" javaType="zwf.po.Medical_Orders"  >
+   	<id column="medical_orders_id" property="medical_orders_id"/>
+   	<result column="start_time" property="start_time"/>
+   	<result column="doctor_id" property="doctor_id"/>
+   	<result column="check_state" property="check_state"/>
+   </association>
+    <association property="medicines" javaType="zwf.po.Medicines"  >
+    <id column="medicines_id" property="medicines_id"/>
+    	<result column="medicines_name" property="medicines_name"/>
+    	<result column="medicines_form" property="medicines_form"/>
+    	<result column="medicines_specification" property="medicines_specification"/>
+    	<result column="medicines_number" property="medicines_number"/>
+    	<result column="medicines_unit" property="medicines_unit"/>
+    	<result column="medicines_price" property="medicines_price"/>
+    	<result column="condition" property="condition"/>
+    </association>
+    <association property="project" javaType="zwf.po.Project"  >
+    <id column="project_id" property="project_id"/>
+    	<result column="project_name" property="project_name"/>
+    	<result column="project_unit" property="project_unit"/>
+    	<result column="project_price" property="project_price"/>
+    </association>
+    <association property="inspection_item" javaType="zwf.po.Inspection_item"  >
+    <id column="Inspection_item_id" property="Inspection_item_id"/>
+    	<result column="Inspection_item_name" property="Inspection_item_name"/>
+    	<result column="Inspection_item_unit" property="Inspection_item_unit"/>
+    	<result column="Inspection_item_pirce" property="Inspection_item_pirce"/>
+    </association>
+    <association property="patient" javaType="zwf.po.Patient"  >
+    <id column="patient_id" property="patient_id"/>
+    	<result column="patient_name" property="patient_name"/>
+    </association>
+   <association property="user" javaType="zwf.po.User"  >
+    <id column="user_id" property="user_id"/>
+    	<result column="doctor_name" property="user_name"/>
+    </association>
+    <association property="user1" javaType="zwf.po.User"  >
+    <id column="u1_id" property="user_id"/>
+    	<result column="nurse_name" property="user_name"/>
+    </association>
+    <association property="user2" javaType="zwf.po.User"  >
+    <id column="u2_id" property="user_id"/>
+    	<result column="stop_doctor_name" property="user_name"/>
+    </association>
+   </resultMap>
+	
+	
+	<select id="selectMedical_Orders_List_Long" resultMap="selectMedical_Orders_List_LongMap" parameterType="Map">
+		<!-- SELECT p.patient_name,mol.*,m.*
+		FROM medical_orders_list mol LEFT JOIN medical_orders mo 
+		ON mo.medical_orders_id = mol.medical_orders_id
+		LEFT JOIN medicines m ON m.medicines_id = mol.medicined_id 
+		LEFT JOIN patient p ON p.patient_id = #{medical_orders_id}	 -->
+		<!-- WHERE medical_orders_id = #{medical_orders_id} -->
+		
+		
+		<!-- SELECT u.user_name,p.patient_name,mol.*,m.*,mo.*
+		FROM medical_orders mo,patient p,medical_orders_list mol,medicines m,`user` u
+		WHERE p.patient_id = #{patient_id} AND mo.medical_orders_id = mol.medical_orders_id AND m.medicines_id = mol.medicined_id
+		AND p.patient_id = mo.patient_id  AND u.user_work_id = mol.doctor_id
+		ORDER BY  mol.start_time DESC,mol.group_list ASC -->
+		SELECT ii.*,pro.*,p.patient_name,mol.*,m.*,u1.user_id as u1_id, u1.user_name AS doctor_name,u2.user_name AS nurse_name,u3.user_name AS stop_doctor_name,p.*
+		FROM medical_orders_list mol LEFT JOIN medical_orders mo 	ON mo.medical_orders_id = mol.medical_orders_id
+		LEFT JOIN medicines m ON (m.medicines_id = mol.medicined_id AND mol.types = m.types)
+	    LEFT JOIN project pro ON( pro.project_id = mol.project_id AND mol.types = pro.types) 
+	    LEFT JOIN inspection_item ii ON( ii.Inspection_item_id = mol.Inspection_item_id AND mol.types = ii.types) 
+		LEFT JOIN patient p ON p.patient_id = mo.patient_id
+		LEFT JOIN `user` u1 ON mol.doctor_id = u1.user_work_id
+		LEFT JOIN `user` u2 ON mol.nurse_id = u2.user_work_id
+		LEFT JOIN `user` u3 ON mol.stop_doctor_id = u3.user_work_id 
+    	WHERE 1=1
+    	AND mol.medical_orders_list_type = 2
+		AND p.patient_id =  #{patient_id} 
+		ORDER BY  mol.start_status,mol.start_time DESC,mol.group_list ASC
+		
+		<if test="null != beginNumber and null != limit">
+  		LIMIT #{beginNumber},#{limit}
+  		</if>
+	</select> 
+	
+	<!-- 执行校对单个病人的临时医嘱数据显示 -->
+	<resultMap type="Medical_Orders_List" id="Action_Medical_Orders_ListDaoMap">
+   <id column="medical_orders_list_id" property="medical_orders_list_id"/>
+  <result column="medical_orders_id" property="medical_orders_id"/>
+  <result column="group_list" property="group"/>
+  <result column="speed" property="speed"/>
+  <result column="number" property="number"/>
+  <result column="sum_number" property="sum_number"/>
+  <result column="types" property="types"/>
+  <result column="ways" property="ways"/>
+  <result column="direction" property="direction"/>
+  <result column="start_time" property="start_time"/>
+  <result column="end_time" property="end_time"/>
+  <result column="doctor_id" property="doctor_id"/>
+  <result column="start_status" property="start_status"/>
+  <result column="nurse_id" property="nurse_id"/>
+  <result column="check_status" property="check_status"/>
+  <result column="check_time" property="check_time"/>
+  <result column="moneya" property="money"/>
+  <result column="action_status" property="action_status"/>
+  <result column="action_time" property="action_time"/>
+  <result column="medical_orders_list_type" property="medical_orders_list_type"/>
+   <association property="medical_Orders" javaType="zwf.po.Medical_Orders"  >
+   	<id column="medical_orders_id" property="medical_orders_id"/>
+   	<result column="medical_orders_id" property="medical_orders_id"/>
+   </association>
+    <association property="medicines" javaType="zwf.po.Medicines"  >
+    <id column="medicines_id" property="medicines_id"/>
+    	<result column="medicines_name" property="medicines_name"/>
+    	<result column="medicines_form" property="medicines_form"/>
+    	<result column="medicines_specification" property="medicines_specification"/>
+    	<result column="medicines_number" property="medicines_number"/>
+    	<result column="medicines_unit" property="medicines_unit"/>
+    	<result column="medicines_price" property="medicines_price"/>
+    	<result column="condition" property="condition"/>
+    </association>
+    <association property="project" javaType="zwf.po.Project"  >
+    <id column="project_id" property="project_id"/>
+    	<result column="project_name" property="project_name"/>
+    	<result column="project_unit" property="project_unit"/>
+    	<result column="project_price" property="project_price"/>
+    </association>
+    <association property="patient" javaType="zwf.po.Patient"  >
+    <id column="patient_id" property="patient_id"/>
+    	<result column="patient_name" property="patient_name"/>
+    	<result column="patient_meal" property="patient_meal"/>
+    </association>
+    <association property="inspection_item" javaType="zwf.po.Inspection_item"  >
+    <id column="Inspection_item_id" property="Inspection_item_id"/>
+    	<result column="Inspection_item_name" property="Inspection_item_name"/>
+    	<result column="Inspection_item_unit" property="Inspection_item_unit"/>
+    	<result column="Inspection_item_pirce" property="Inspection_item_pirce"/>
+    </association>
+    <association property="patient_message" javaType="zwf.po.Patient_message"  >
+    <id column="patient_message_id" property="patient_message_id"/>
+    	<result column="ruyuan_time" property="ruyuan_time"/>
+    	<result column="diagnosis_a" property="diagnosis_a"/>
+    </association>
+    <association property="deparment" javaType="zwf.po.Deparment"  >
+    <id column="deparment_id" property="deparment_id"/>
+    	<result column="deparment_name" property="deparment_name"/>
+    </association>
+    <association property="bed" javaType="zwf.po.Bed"  >
+    <id column="bed_id" property="bed_id"/>
+    	<result column="bed_name" property="bed_name"/>
+    </association>
+    <association property="user" javaType="zwf.po.User"  >
+    <id column="user_id" property="user_id"/>
+    	<result column="doctor_name" property="user_name"/>
+    </association>
+    <association property="user1" javaType="zwf.po.User"  >
+    <id column="u1_id" property="user_id"/>
+    	<result column="nurse_name" property="user_name"/>
+    </association>
+   </resultMap>
+	<select id="select_Action_Medical_Orders_List" resultMap="Action_Medical_Orders_ListDaoMap" parameterType="Map">
+		
+		SELECT ii.*,pro.*,p.patient_id,p.patient_name,p.patient_meal,bed.bed_name,d.deparment_name,pm.patient_message_id,u1.user_id as u1_id, u1.user_name AS doctor_name,u2.user_name AS nurse_name,mol.*,m.*,(mol.number * m.medicines_price) as moneya
+		FROM medical_orders_list mol 
+		LEFT JOIN `user` u1 ON mol.doctor_id = u1.user_work_id
+		LEFT JOIN `user` u2 ON mol.check_nurse_id = u2.user_work_id 
+		LEFT JOIN medicines m ON (m.medicines_id = mol.medicined_id AND mol.types = m.types)
+	    LEFT JOIN project pro ON( pro.project_id = mol.project_id AND mol.types = pro.types)
+	    LEFT JOIN inspection_item ii ON( ii.Inspection_item_id = mol.Inspection_item_id AND mol.types = ii.types)  
+		LEFT JOIN medical_orders mo ON mo.medical_orders_id = mol.medical_orders_id
+		LEFT JOIN patient p ON p.patient_id = mo.patient_id
+		LEFT JOIN patient_message pm ON p.patient_id = pm.patient_id  
+		LEFT JOIN  bed ON bed.bed_id = pm.bed_id
+		LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id  
+		WHERE mol.start_status = 1
+		AND mol.medical_orders_list_type = 1
+		AND p.patient_id = #{patient_id} 
+		ORDER BY  mol.check_status,mol.check_time DESC,mol.group_list ASC
+		<if test="null != beginNumber and null != limit">
+  		LIMIT #{beginNumber},#{limit}
+  		</if>
+	</select> 
+	
+	<!-- 执行校对单个病人的长期医嘱数据显示 -->
+	<resultMap type="Medical_Orders_List" id="select_Action_Medical_Orders_List_LongDaoMap">
+   <id column="medical_orders_list_id" property="medical_orders_list_id"/>
+  <result column="medical_orders_id" property="medical_orders_id"/>
+  <result column="group_list" property="group"/>
+  <result column="speed" property="speed"/>
+  <result column="number" property="number"/>
+  <result column="sum_number" property="sum_number"/>
+  <result column="types" property="types"/>
+  <result column="ways" property="ways"/>
+  <result column="direction" property="direction"/>
+  <result column="start_time" property="start_time"/>
+  <result column="doctor_id" property="doctor_id"/>
+  <result column="start_status" property="start_status"/>
+  <result column="end_time" property="end_time"/>
+  <result column="nurse_id" property="nurse_id"/>
+  <result column="check_status" property="check_status"/>
+  <result column="check_time" property="check_time"/>
+  <result column="moneya" property="money"/>
+  <result column="action_status" property="action_status"/>
+  <result column="action_time" property="action_time"/>
+  <result column="medical_orders_list_type" property="medical_orders_list_type"/>
+   <association property="medical_Orders" javaType="zwf.po.Medical_Orders"  >
+   	<id column="medical_orders_id" property="medical_orders_id"/>
+   	<result column="medical_orders_id" property="medical_orders_id"/>
+   </association>
+    <association property="medicines" javaType="zwf.po.Medicines"  >
+    <id column="medicines_id" property="medicines_id"/>
+    	<result column="medicines_name" property="medicines_name"/>
+    	<result column="medicines_form" property="medicines_form"/>
+    	<result column="medicines_specification" property="medicines_specification"/>
+    	<result column="medicines_number" property="medicines_number"/>
+    	<result column="medicines_unit" property="medicines_unit"/>
+    	<result column="medicines_price" property="medicines_price"/>
+    	<result column="condition" property="condition"/>
+    </association>
+    <association property="project" javaType="zwf.po.Project"  >
+    <id column="project_id" property="project_id"/>
+    	<result column="project_name" property="project_name"/>
+    	<result column="project_unit" property="project_unit"/>
+    	<result column="project_price" property="project_price"/>
+    </association>
+    <association property="inspection_item" javaType="zwf.po.Inspection_item"  >
+    <id column="Inspection_item_id" property="Inspection_item_id"/>
+    	<result column="Inspection_item_name" property="Inspection_item_name"/>
+    	<result column="Inspection_item_unit" property="Inspection_item_unit"/>
+    	<result column="Inspection_item_pirce" property="Inspection_item_pirce"/>
+    </association>
+    <association property="patient" javaType="zwf.po.Patient"  >
+    <id column="patient_id" property="patient_id"/>
+    	<result column="patient_name" property="patient_name"/>
+    	<result column="patient_meal" property="patient_meal"/>
+    </association>
+    <association property="patient_message" javaType="zwf.po.Patient_message"  >
+    <id column="patient_message_id" property="patient_message_id"/>
+    	<result column="ruyuan_time" property="ruyuan_time"/>
+    	<result column="diagnosis_a" property="diagnosis_a"/>
+    </association>
+    <association property="deparment" javaType="zwf.po.Deparment"  >
+    <id column="deparment_id" property="deparment_id"/>
+    	<result column="deparment_name" property="deparment_name"/>
+    </association>
+    <association property="bed" javaType="zwf.po.Bed"  >
+    <id column="bed_id" property="bed_id"/>
+    	<result column="bed_name" property="bed_name"/>
+    </association>
+    <association property="user" javaType="zwf.po.User"  >
+    <id column="user_id" property="user_id"/>
+    	<result column="doctor_name" property="user_name"/>
+    </association>
+    <association property="user1" javaType="zwf.po.User"  >
+    <id column="u1_id" property="user_id"/>
+    	<result column="nurse_name" property="user_name"/>
+    </association>
+    <association property="user2" javaType="zwf.po.User"  >
+    <id column="u2_id" property="user_id"/>
+    	<result column="stop_doctor_name" property="user_name"/>
+    </association>
+   </resultMap>
+	<select id="select_Action_Medical_Orders_List_Long" resultMap="select_Action_Medical_Orders_List_LongDaoMap" parameterType="Map">
+		
+		SELECT  ii.*,pro.*,p.patient_id,p.patient_name,p.patient_meal,bed.bed_name,d.deparment_name,pm.patient_message_id,u1.user_name AS doctor_name,u2.user_name AS nurse_name,u3.user_name AS stop_doctor_name,mol.*,m.*,(mol.number * m.medicines_price) as moneya
+		FROM medical_orders_list mol 
+		LEFT JOIN `user` u1 ON mol.doctor_id = u1.user_work_id
+		LEFT JOIN `user` u2 ON mol.check_nurse_id = u2.user_work_id 
+		LEFT JOIN `user` u3 ON mol.stop_doctor_id = u3.user_work_id 
+		LEFT JOIN medicines m ON (m.medicines_id = mol.medicined_id AND mol.types = m.types)
+	    LEFT JOIN project pro ON( pro.project_id = mol.project_id AND mol.types = pro.types)
+	    LEFT JOIN inspection_item ii ON( ii.Inspection_item_id = mol.Inspection_item_id AND mol.types = ii.types)  
+		LEFT JOIN medical_orders mo ON mo.medical_orders_id = mol.medical_orders_id
+		LEFT JOIN patient p ON p.patient_id = mo.patient_id 
+		LEFT JOIN patient_message pm ON p.patient_id = pm.patient_id  
+		LEFT JOIN  bed ON bed.bed_id = pm.bed_id
+		LEFT JOIN deparment d ON d.deparment_id = pm.deparment_id
+		WHERE mol.start_status = 1
+		AND mol.medical_orders_list_type = 2
+		AND p.patient_id = #{patient_id} 
+		ORDER BY mol.check_status, mol.check_time DESC,mol.group_list ASC
+		<if test="null != beginNumber and null != limit">
+  		LIMIT #{beginNumber},#{limit}
+  		</if>
+	</select> 
+	
+	<select id="getCountMedical_Orders_List" resultType="int">
+  		SELECT COUNT(1) 
+  		<!-- FROM medical_orders mo,patient p,medical_orders_list mol,medicines m,`user` u
+		WHERE p.patient_id = #{patient_id} AND mo.medical_orders_id = mol.medical_orders_id AND m.medicines_id = mol.medicined_id
+		AND p.patient_id = mo.patient_id  AND u.user_work_id = mol.doctor_id -->
+  		<!-- FROM medical_orders_list mol LEFT JOIN medical_orders mo 
+		ON mo.medical_orders_id = mol.medical_orders_id
+		LEFT JOIN medicines m ON m.medicines_id = mol.medicined_id 
+		LEFT JOIN patient p ON p.patient_id = #{medical_orders_id} -->
+		FROM medical_orders_list mol LEFT JOIN medical_orders mo 	ON mo.medical_orders_id = mol.medical_orders_id
+		LEFT JOIN medicines m ON m.medicines_id = mol.medicined_id 
+		LEFT JOIN patient p ON p.patient_id = mo.patient_id
+		LEFT JOIN `user` u1 ON mol.doctor_id = u1.user_work_id
+		LEFT JOIN `user` u2 ON mol.nurse_id = u2.user_work_id 
+    	WHERE 1=1
+    	AND mol.medical_orders_list_type = 1
+		AND p.patient_id =  #{patient_id} 
+		ORDER BY  mol.start_time DESC,mol.group_list ASC
+   </select>
+   <select id="getCountMedical_Orders_List_Long" resultType="int">
+  		SELECT COUNT(1) 
+  		<!-- FROM medical_orders mo,patient p,medical_orders_list mol,medicines m,`user` u
+		WHERE p.patient_id = #{patient_id} AND mo.medical_orders_id = mol.medical_orders_id AND m.medicines_id = mol.medicined_id
+		AND p.patient_id = mo.patient_id  AND u.user_work_id = mol.doctor_id -->
+  		<!-- FROM medical_orders_list mol LEFT JOIN medical_orders mo 
+		ON mo.medical_orders_id = mol.medical_orders_id
+		LEFT JOIN medicines m ON m.medicines_id = mol.medicined_id 
+		LEFT JOIN patient p ON p.patient_id = #{medical_orders_id} -->
+		FROM medical_orders_list mol LEFT JOIN medical_orders mo 	ON mo.medical_orders_id = mol.medical_orders_id
+		LEFT JOIN medicines m ON m.medicines_id = mol.medicined_id 
+		LEFT JOIN patient p ON p.patient_id = mo.patient_id
+		LEFT JOIN `user` u1 ON mol.doctor_id = u1.user_work_id
+		LEFT JOIN `user` u2 ON mol.nurse_id = u2.user_work_id 
+    	WHERE 1=1
+    	AND mol.medical_orders_list_type = 2
+		AND p.patient_id =  #{patient_id} 
+		ORDER BY  mol.start_time DESC,mol.group_list ASC
+   </select>
+   <select id="getCount_Action_Medical_Orders_List" resultType="int">
+  		SELECT COUNT(1)
+		FROM medical_orders_list mol 
+		LEFT JOIN `user` u1 ON mol.doctor_id = u1.user_work_id
+		LEFT JOIN `user` u2 ON mol.check_nurse_id = u2.user_work_id 
+		LEFT JOIN medicines m ON m.medicines_id = mol.medicined_id 
+		LEFT JOIN medical_orders mo ON mo.medical_orders_id = mol.medical_orders_id
+		LEFT JOIN patient p ON p.patient_id = mo.patient_id  
+		WHERE mol.start_status = 1
+		AND mol.medical_orders_list_type = 1
+		AND p.patient_id = #{patient_id}
+   </select>  
+   <select id="getCount_Action_Medical_Orders_List_Long" resultType="int">
+  		SELECT COUNT(1)
+		FROM medical_orders_list mol 
+		LEFT JOIN `user` u1 ON mol.doctor_id = u1.user_work_id
+		LEFT JOIN `user` u2 ON mol.check_nurse_id = u2.user_work_id 
+		LEFT JOIN medicines m ON m.medicines_id = mol.medicined_id 
+		LEFT JOIN medical_orders mo ON mo.medical_orders_id = mol.medical_orders_id
+		LEFT JOIN patient p ON p.patient_id = mo.patient_id  
+		WHERE mol.start_status = 1
+		AND mol.medical_orders_list_type = 2
+		AND p.patient_id = #{patient_id}
+   </select>
+   <select id="getCount_Check_Medical_Orders_List_All" resultType="int">
+  		SELECT COUNT(1)
+		FROM medical_orders_list mol 
+		LEFT JOIN `user` u1 ON mol.doctor_id = u1.user_work_id
+		LEFT JOIN `user` u2 ON mol.check_nurse_id = u2.user_work_id 
+		LEFT JOIN medicines m ON m.medicines_id = mol.medicined_id 
+		LEFT JOIN medical_orders mo ON mo.medical_orders_id = mol.medical_orders_id
+		LEFT JOIN patient p ON p.patient_id = mo.patient_id  
+		WHERE mol.start_status = 1
+		AND p.patient_id = #{patient_id}
+   </select>
+   
+   <!--添加  -->
+	<insert id="addMedical_Orders_List" parameterType="Medical_Orders_List">
+	insert into medical_orders_list(project_id,Inspection_item_id,medical_orders_id,medicined_id,group_list,number,sum_number,types,speed,ways,direction,doctor_id,medical_orders_list_type)
+	values(#{project_id},#{Inspection_item_id},#{medical_orders_id},#{medicined_id},#{group},#{number},#{sum_number},#{types},#{speed},#{ways},#{direction},#{doctor_id},#{medical_orders_list_type})
+	</insert>
+   
+   <!--更新  -->
+	<update id="updateMedical_Orders_List" parameterType="Medical_Orders_List">
+	update medical_orders_list
+	<set>
+	 <if test="ways!=null">
+	 	ways=#{ways},
+	 </if>
+	 <if test="speed!=null">
+	 	speed=#{speed},
+	 </if>
+	 <if test="number!=null">
+	 	number=#{number},
+	 </if>
+	 <if test="group!=null">
+	 	group_list=#{group},
+	 </if>
+	 	start_status = 0,
+	 	<!-- start_time = NULL, -->
+	 <if test="direction!=null">
+	 	direction=#{direction},
+	 </if>
+	 <if test="sum_number!=null">
+	 	sum_number=#{sum_number},
+	 </if>
+	</set>
+	where medical_orders_list_id=#{medical_orders_list_id}
+	</update>
+	
+	<!--修改当行未执行时间  -->
+	<update id="updateMedical_Orders_List_singel_time" parameterType="Medical_Orders_List">
+	update medical_orders_list
+	<set>
+	 <if test="start_time!=null">
+	 	start_time=#{start_time},
+	 </if>
+	 
+	 	end_time=#{end_time},
+	 	<if test="end_time!=null">
+	 	stop_doctor_id= #{stop_doctor_id},
+	 	</if>
+	 	<if test="end_time == null">
+	 	stop_doctor_id= null,
+	 	</if>
+	  
+	 	start_status=0,	 
+	</set>
+	where medical_orders_list_id=#{medical_orders_list_id}
+	</update>
+	
+	<!--修改当行已执行时间  -->
+	<update id="updateMedical_Orders_List_singel_time1" parameterType="Medical_Orders_List">
+	update medical_orders_list
+	<set>
+	 <if test="start_time!=null">
+	 	start_time=#{start_time},
+	 </if>
+	 
+	 	end_time=#{end_time},
+	 	<if test="end_time!=null">
+	 	stop_doctor_id= #{stop_doctor_id},
+	 	</if>
+	 	<if test="end_time == null">
+	 	stop_doctor_id= null,
+	 	</if> 
+	 	 
+	</set>
+	where medical_orders_list_id=#{medical_orders_list_id} and  check_status = 1
+	</update>
+	
+	<!--修改同组未校对时间  -->
+	<update id="updateMedical_Orders_List_group_time" parameterType="Medical_Orders_List">
+	update medical_orders_list
+	<set>
+	<if test="start_time!=null">
+	 	start_time=#{start_time},
+	 </if>
+	 	<if test="end_time!=null">
+	 	stop_doctor_id= #{stop_doctor_id},
+	 	</if>
+	 	<if test="end_time == null">
+	 	stop_doctor_id= null,
+	 	</if>
+	 	end_time=#{end_time},
+	 	start_status=0,
+	</set>
+	where medical_orders_id=#{medical_orders_id} and group_list=#{group} and check_status = 0
+	and medical_orders_list_type = #{medical_orders_list_type} 
+	<if test="end_time!=null">
+	and UNIX_TIMESTAMP(start_time) &lt; UNIX_TIMESTAMP(#{end_time})
+	 </if>
+	</update>
+	
+	<!--修改同组已校对时间  -->
+	<update id="updateMedical_Orders_List_group_time1" parameterType="Medical_Orders_List">
+	update medical_orders_list
+	<set>
+	<if test="start_time!=null">
+	 	start_time=#{start_time},
+	 </if>	 
+	 	end_time=#{end_time},	
+	 	<if test="end_time!=null">
+	 	stop_doctor_id= #{stop_doctor_id},
+	 	</if>
+	 	<if test="end_time == null">
+	 	stop_doctor_id= null,
+	 	</if> 	
+	</set>
+	where medical_orders_id=#{medical_orders_id} and group_list=#{group} and check_status = 1
+	and medical_orders_list_type = #{medical_orders_list_type} 
+	<if test="end_time!=null">
+	and UNIX_TIMESTAMP(start_time) &lt; UNIX_TIMESTAMP(#{end_time})
+	 </if>
+	</update>
+	
+   <!--单行提交  -->
+	<update id="update_single_Medical_Orders_List" parameterType="Medical_Orders_List">
+	update medical_orders_list
+	<set>
+	 <if test="start_time!=null">
+	 	start_time=#{start_time},
+	 </if>
+	 <if test="start_status!=null">
+	 	start_status=#{start_status},
+	 </if>
+	</set>
+	where medical_orders_list_id=#{medical_orders_list_id} and start_status = 0 
+	</update>
+	
+	<!--同组提交  -->
+	<update id="update_Group_Medical_Orders_List" parameterType="Medical_Orders_List">
+	update medical_orders_list
+	<set>
+	 <if test="start_time!=null">
+	 	start_time=#{start_time},
+	 </if>
+	 <if test="start_status!=null">
+	 	start_status=#{start_status},
+	 </if>
+	</set>
+	where medical_orders_id=#{medical_orders_id} and group_list=#{group} and start_status = 0 and check_status = 0
+	and medical_orders_list_type = #{medical_orders_list_type} and start_time is null
+	</update>
+	
+	<update id="update_Group_Medical_Orders_List2" parameterType="Medical_Orders_List">
+	update medical_orders_list
+	<set>
+	 <if test="start_status!=null">
+	 	start_status=#{start_status},
+	 </if>
+	</set>
+	where medical_orders_id=#{medical_orders_id} and group_list=#{group} and start_status = 0 and check_status = 0
+	and medical_orders_list_type = #{medical_orders_list_type} and start_time is true
+	</update>
+   
+   <!--全部提交  -->
+	<update id="update_All_Medical_Orders_List" parameterType="Medical_Orders_List">
+	update medical_orders_list
+	<set>
+	 <if test="start_time!=null">
+	 	start_time=#{start_time},
+	 </if>
+	 <if test="start_status!=null">
+	 	start_status=#{start_status},
+	 </if>
+	</set>
+	where medical_orders_id=#{medical_orders_id} and start_status = 0 
+	and medical_orders_list_type = #{medical_orders_list_type} and start_time is null and check_status = 0
+	</update>
+	
+	<update id="update_All_Medical_Orders_List2" parameterType="Medical_Orders_List">
+	update medical_orders_list
+	<set>	 
+	 <if test="start_status!=null">
+	 	start_status=#{start_status},
+	 </if>
+	</set>
+	where medical_orders_id=#{medical_orders_id} and start_status = 0 
+	and medical_orders_list_type = #{medical_orders_list_type} and start_time is true and check_status = 0
+	</update>
+	
+	<delete id="deleteMedical_Orders_List" parameterType="String">
+		delete from medical_orders_list where medical_orders_list_id in (${medical_orders_list_id})
+	</delete>
+	
+	<!--校对医嘱  -->
+	<update id="check_Medical_Orders_List" parameterType="Medical_Orders_List">
+	update medical_orders_list
+	<set>
+		check_nurse_id= #{check_nurse_id},
+	 <if test="check_time!=null">
+	 	check_time=#{check_time},
+	 </if>
+	 <if test="check_status!=null">
+	 	check_status=#{check_status},
+	 </if>
+	</set>
+	where  check_status = 0 and medical_orders_list_id in (${select_id})
+	</update>
+	<!--回退医嘱  -->
+	<update id="return_Medical_Orders_List" parameterType="Medical_Orders_List">
+	update medical_orders_list
+	<set>
+		check_nurse_id= #{check_nurse_id},
+	 <if test="check_time!=null">
+	 	check_time=#{check_time},
+	 </if>
+	 <if test="check_status!=null">
+	 	check_status=#{check_status},
+	 </if>
+	</set>
+	where  check_status = 0 and medical_orders_list_id in (${select_id})
+	</update>
+	<!--取消校对  -->
+	<update id="cancel_check_Medical_Orders_List" parameterType="Medical_Orders_List">
+	update medical_orders_list
+	<set>	 
+	 	check_time=NULL,	
+	 <if test="check_status!=null">
+	 	check_status=#{check_status},
+	 </if>
+	</set>
+	where  check_status = 1 and medical_orders_list_id in (${select_id})
+	</update>
+	<!--执行医嘱  -->
+	<update id="action_Medical_Orders_List" parameterType="Medical_Orders_List">
+	update medical_orders_list
+	<set>
+		nurse_id= #{nurse_id}, 
+	 	action_status= #{action_status},	
+	 <if test="action_time!=null">
+	 	action_time=#{action_time},
+	 </if>
+	</set>
+	where  check_status = 1 and medical_orders_list_id in (${select_id})
+	</update>
+	
+	<select id="get_action_Medical_Orders_List" resultType="int">
+  		SELECT COUNT(1)
+		FROM medical_orders_list mol
+		LEFT JOIN medical_orders mo ON mo.medical_orders_id = mol.medical_orders_id
+		LEFT JOIN patient p ON p.patient_id = mo.patient_id
+		WHERE 1=1 
+		AND p.patient_id = #{patient_id}
+		AND mol.check_status = 1
+   </select>
+   
+   <select id="get_return_Medical_Orders_List" resultType="int">
+  		SELECT COUNT(1)
+		FROM medical_orders_list mol
+		LEFT JOIN medical_orders mo ON mo.medical_orders_id = mol.medical_orders_id
+		LEFT JOIN patient p ON p.patient_id = mo.patient_id
+		WHERE 1=1 
+		AND p.patient_id = #{patient_id}
+		AND mol.check_status = 2
+   </select>
+
+	<!--停止单行医嘱  -->
+	<update id="update_single_stop_Medical_Orders_List" parameterType="Medical_Orders_List">
+	update medical_orders_list
+	<set>
+	 <if test="end_time!=null">
+	 	end_time=#{end_time},
+	 </if>
+	 stop_doctor_id= #{stop_doctor_id},	 
+	</set>
+	where medical_orders_list_id=#{medical_orders_list_id} and start_time is true AND end_time IS NULL
+	and UNIX_TIMESTAMP(start_time) &lt; UNIX_TIMESTAMP(#{end_time})
+	</update>
+	
+	<!--同组停止  -->
+	<update id="update_Group_stop_Medical_Orders_List" parameterType="Medical_Orders_List">
+	update medical_orders_list
+	<set>
+	 <if test="end_time!=null">
+	 	end_time=#{end_time},
+	 </if>
+	 stop_doctor_id= #{stop_doctor_id},	
+	</set>
+	where medical_orders_id=#{medical_orders_id} and group_list=#{group} and end_time is null
+	and medical_orders_list_type = #{medical_orders_list_type} and start_time is true
+	and UNIX_TIMESTAMP(start_time) &lt; UNIX_TIMESTAMP(#{end_time})
+	</update>
+	
+	<!--全部停止  -->
+	<update id="update_All_stop_Medical_Orders_List" parameterType="Medical_Orders_List">
+	update medical_orders_list
+	<set>
+	 <if test="end_time!=null">
+	 	end_time=#{end_time},
+	 </if>
+	 <if test="start_status!=null">
+	 	start_status=#{start_status},
+	 </if>
+	 stop_doctor_id= #{stop_doctor_id},	
+	</set>
+	where medical_orders_id=#{medical_orders_id}  
+	and medical_orders_list_type = #{medical_orders_list_type} and end_time is null and start_time is true
+	and UNIX_TIMESTAMP(start_time) &lt; UNIX_TIMESTAMP(#{end_time})
+	</update>
+	
+	<select id="selectid" resultType="Medical_Orders_List">
+  		SELECT patient_id
+		FROM medical_orders
+   </select>
+   
+   <select id="select_action_id" resultType="Medical_Orders_List">
+  		SELECT mol.medical_orders_list_id
+		FROM medical_orders_list mol,medical_orders mo
+		WHERE 1=1 AND mol.medical_orders_id = mo.medical_orders_id
+		AND mo.patient_id = #{patient_id} AND mol.start_time BETWEEN #{start_time} AND  #{end_time}
+   </select>
+   
+   <!--查询单个病人当天临时医嘱数量-->
+   <select id="getCount_Action" resultType="int">
+  		SELECT COUNT(1)
+		FROM medical_orders_list mol,medical_orders mo
+		WHERE 1=1 AND mol.medical_orders_id = mo.medical_orders_id AND mol.check_status = 1
+		AND mo.patient_id = #{patient_id} AND mol.start_time BETWEEN #{start_time} AND  #{end_time}
+		AND mol.medical_orders_list_type = 1
+   </select>
+   
+   <!--查询单个病人当天长期医嘱数量无结束时间-->
+   <select id="getCount_Action_Long" resultType="int">
+  		SELECT COUNT(1)
+		FROM medical_orders_list mol,medical_orders mo
+		WHERE 1=1 AND mol.medical_orders_id = mo.medical_orders_id AND mol.check_status = 1
+		AND mo.patient_id = #{patient_id} 
+		AND UNIX_TIMESTAMP(date_format(date_format(mol.start_time, '%Y-%m-%d'),'%Y-%m-%d %H:%i:%s')) &lt;= UNIX_TIMESTAMP(#{start_time}) 
+		AND mol.end_time is NULL
+		AND mol.medical_orders_list_type = 2
+   </select>  
+   
+   <!--查询单个病人当天长期医嘱数量有结束时间-->
+   <select id="getCount_Action_Long_end" resultType="int">
+  		SELECT COUNT(1)
+		FROM medical_orders_list mol,medical_orders mo
+		WHERE 1=1 AND mol.medical_orders_id = mo.medical_orders_id AND mol.check_status = 1
+		AND mo.patient_id = #{patient_id} 
+		AND UNIX_TIMESTAMP(date_format(date_format(mol.start_time, '%Y-%m-%d'),'%Y-%m-%d %H:%i:%s')) &lt;= UNIX_TIMESTAMP(#{start_time}) 
+		AND UNIX_TIMESTAMP(mol.end_time) &gt; UNIX_TIMESTAMP(#{start_time})
+		AND mol.medical_orders_list_type = 2
+   </select> 
+   
+</mapper>
